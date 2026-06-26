@@ -1,439 +1,464 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eduxellence — Research-Grade Academic & Statistical Tools</title>
-    <meta name="description" content="Eduxellence provides research-grade statistical analysis, data cleaning, academic assessment, and results management tools for researchers, lecturers, and institutions.">
-    <link rel="icon" type="image/x-icon" href="/Eduxellence.ico">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        /* ── RESET ── */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --ny: #0B1829;
-            --ny2: #112240;
-            --bl: #1E6BFF;
-            --tl: #0FC9A0;
-            --wh: #fff;
-            --of: #F7F9FC;
-            --sl: #64748B;
-            --bd: #E2E8F0;
-            --ok: #16A34A;
-            --er: #DC2626;
-            --wn: #D97706;
-            --tx: #0F172A;
-            --txM: #475569;
-            --gold: #C8960C;
-            --gold-light: #F5E6B8;
-            --gold-dark: #8B6508;
-            --ink: #0D0D0D;
-            --ink-soft: #2A2A2A;
-            --cream: #FDFAF4;
-            --cream-dark: #F4EED8;
-            --muted: #6B6456;
-            --border: rgba(200,150,12,0.2);
-            --shL: 0 12px 40px rgba(0,0,0,.14);
-            --r16: 16px;
-            --r24: 24px;
-        }
-        html { scroll-behavior: smooth; }
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--cream);
-            color: var(--ink);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-        a { color: var(--bl); text-decoration: none; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analytics | Eduxellence Solutions</title>
+<link rel="icon" type="image/x-icon" href="/Eduxellence.ico">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C8960C;
+    --gold-light: #F5E6B8;
+    --gold-dark: #8B6508;
+    --ink: #0D0D0D;
+    --ink-soft: #2A2A2A;
+    --cream: #FDFAF4;
+    --cream-dark: #F4EED8;
+    --white: #FFFFFF;
+    --muted: #6B6456;
+    --border: rgba(200,150,12,0.2);
+    --card-bg: rgba(255,255,255,0.95);
+    --shadow: 0 4px 32px rgba(13,13,13,0.08);
+    --blue: #1a73e8;
+    --blue-dark: #1557b0;
+    --blue-light: #e8f0fe;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
 
-        /* ── NAV ── */
-        nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(253,250,244,0.96);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 0 5%;
-            display: flex; align-items: center; justify-content: space-between;
-            height: 68px;
-        }
-        .nav-logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.3rem; font-weight: 700;
-            color: var(--ink);
-            letter-spacing: -0.02em;
-        }
-        .nav-logo span { color: var(--gold); }
-        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-        .nav-links a {
-            font-size: 0.875rem; font-weight: 500;
-            color: var(--muted); text-decoration: none;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--gold); }
-        .nav-cta {
-            background: var(--gold); color: var(--white);
-            padding: 0.5rem 1.25rem; border-radius: 4px;
-            font-size: 0.875rem; font-weight: 600;
-            text-decoration: none; transition: background 0.2s;
-            white-space: nowrap;
-        }
-        .nav-cta:hover { background: var(--gold-dark); }
-        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
-        .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(253,250,244,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 5%;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+  .nav-links a {
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--muted); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-links a.active { color: var(--gold); font-weight: 600; }
+  .nav-cta {
+    background: var(--gold); color: var(--white);
+    padding: 0.5rem 1.25rem; border-radius: 4px;
+    font-size: 0.875rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { background: var(--gold-dark); }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
 
-        /* ── HERO ── */
-        .hero {
-            min-height: 100vh;
-            background: linear-gradient(160deg, #0D0D0D 0%, #1A1508 60%, #2A1F08 100%);
-            display: flex; align-items: center; justify-content: center;
-            text-align: center;
-            padding: 120px 5% 80px;
-            position: relative;
-            overflow: hidden;
-            margin-top: 0;
-        }
-        .hero::before {
-            content: '';
-            position: absolute; inset: 0;
-            background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,150,12,0.12) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .hero-badge {
-            display: inline-block;
-            border: 1px solid rgba(200,150,12,0.5);
-            color: var(--gold); font-size: 0.75rem; font-weight: 600;
-            letter-spacing: 0.12em; text-transform: uppercase;
-            padding: 0.4rem 1rem; border-radius: 2px;
-            margin-bottom: 2rem;
-            position: relative;
-        }
-        .hero h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            font-weight: 700; color: var(--white);
-            line-height: 1.15; margin-bottom: 1.5rem;
-            max-width: 800px;
-            position: relative;
-        }
-        .hero h1 em { color: var(--gold); font-style: normal; }
-        .hero p {
-            font-size: 1.1rem; color: rgba(255,255,255,0.65);
-            max-width: 560px; margin: 0 auto 2.5rem;
-            font-weight: 300;
-            position: relative;
-        }
+  /* HERO */
+  .hero {
+    min-height: 70vh;
+    background: linear-gradient(160deg, #0D1B2A 0%, #1B3A5C 60%, #1a73e8 100%);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 5% 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,150,12,0.1) 0%, transparent 70%);
+  }
+  .hero-badge {
+    display: inline-block;
+    border: 1px solid rgba(200,150,12,0.5);
+    color: var(--gold); font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.4rem 1rem; border-radius: 2px;
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4rem);
+    font-weight: 700; color: var(--white);
+    line-height: 1.15; margin-bottom: 1.5rem;
+    max-width: 800px;
+  }
+  .hero h1 em { color: var(--gold); font-style: normal; }
+  .hero p {
+    font-size: 1.1rem; color: rgba(255,255,255,0.65);
+    max-width: 560px; margin: 0 auto 2.5rem;
+    font-weight: 300;
+  }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
 
-        /* ── TOOL CARDS ── */
-        .tools-section {
-            padding: 80px 5%;
-            background: var(--cream);
-        }
-        .section-label {
-            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
-            text-transform: uppercase; color: var(--gold);
-            margin-bottom: 0.75rem; display: block;
-        }
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-            font-weight: 700; color: var(--ink);
-            line-height: 1.2; margin-bottom: 1rem;
-        }
-        .section-sub {
-            font-size: 1rem; color: var(--muted);
-            max-width: 560px; font-weight: 300;
-        }
-        .section-head { margin-bottom: 3.5rem; }
-        .center { text-align: center; }
-        .center .section-sub { margin: 0 auto; }
+  .btn-primary {
+    background: var(--gold); color: var(--ink);
+    padding: 0.875rem 2rem; border-radius: 4px;
+    font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-primary:hover { background: #E8A90E; transform: translateY(-1px); }
+  .btn-outline {
+    border: 1px solid rgba(255,255,255,0.3); color: var(--white);
+    padding: 0.875rem 2rem; border-radius: 4px;
+    font-size: 0.9rem; font-weight: 500;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
-        .tool-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1.5rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .tool-card {
-            background: var(--wh);
-            border-radius: 12px;
-            box-shadow: var(--shL);
-            padding: 2rem 1.75rem;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-        .tool-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 50px rgba(0,0,0,.12);
-            border-color: var(--gold);
-        }
-        .tool-card .icon {
-            font-size: 2.8rem;
-            margin-bottom: 0.75rem;
-            display: block;
-        }
-        .tool-card h3 {
-            font-family: 'Playfair Display', serif;
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: var(--ink);
-            margin-bottom: 0.2rem;
-        }
-        .tool-card .domain {
-            font-size: 0.7rem;
-            color: var(--sl);
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--of);
-            padding: 0.15rem 0.6rem;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 0.6rem;
-        }
-        .tool-card p {
-            font-size: 0.85rem;
-            color: var(--txM);
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-        .tool-card .btn-tool {
-            display: inline-block;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 600;
-            font-size: 0.8rem;
-            padding: 0.5rem 1.5rem;
-            border-radius: 6px;
-            background: var(--gold);
-            color: var(--ink);
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-        }
-        .tool-card .btn-tool:hover {
-            background: var(--gold-dark);
-            color: var(--white);
-            transform: translateY(-2px);
-        }
-        .tool-card .btn-tool.teal {
-            background: var(--tl);
-            color: var(--ny);
-        }
-        .tool-card .btn-tool.teal:hover {
-            background: #0BA88A;
-            color: var(--white);
-        }
-        .tool-card .btn-tool.blue {
-            background: var(--bl);
-            color: var(--wh);
-        }
-        .tool-card .btn-tool.blue:hover {
-            background: #1452CC;
-        }
-        .tool-card .feature-tag {
-            font-size: 0.55rem;
-            background: rgba(200,150,12,0.15);
-            color: var(--gold-dark);
-            padding: 0.15rem 0.6rem;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 0.2rem;
-            font-weight: 600;
-        }
-        .tool-card .feature-tag.green { background: rgba(15,201,160,0.15); color: #0BA88A; }
-        .tool-card .feature-tag.blue { background: rgba(30,107,255,0.12); color: #1452CC; }
+  /* SECTIONS */
+  section { padding: 80px 5%; }
+  .section-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.75rem; display: block;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700; color: var(--ink);
+    line-height: 1.2; margin-bottom: 1rem;
+  }
+  .section-sub {
+    font-size: 1rem; color: var(--muted);
+    max-width: 560px; font-weight: 300;
+  }
+  .section-head { margin-bottom: 3.5rem; }
+  .center { text-align: center; }
+  .center .section-sub { margin: 0 auto; }
 
-        /* ── TRUST BAR ── */
-        .trust-bar {
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 1.5rem 5%;
-            display: flex; justify-content: center; flex-wrap: wrap; gap: 2.5rem;
-        }
-        .trust-item {
-            display: flex; align-items: center; gap: 0.6rem;
-            font-size: 0.875rem; font-weight: 500; color: var(--muted);
-        }
-        .trust-item strong { color: var(--ink); }
-        .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+  /* SERVICES GRID */
+  .services-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    max-width: 1100px; margin: 0 auto;
+  }
+  .service-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 8px; padding: 2rem;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .service-card:hover { box-shadow: var(--shadow); transform: translateY(-4px); border-color: var(--gold); }
+  .service-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+  .service-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .service-card p { font-size: 0.875rem; color: var(--muted); line-height: 1.6; }
 
-        /* ── FOOTER ── */
-        footer {
-            background: #080808; color: rgba(255,255,255,0.4);
-            padding: 2rem 5%; text-align: center;
-            font-size: 0.8rem; border-top: 1px solid rgba(200,150,12,0.15);
-        }
-        footer strong { color: var(--gold); }
-        footer a { color: var(--gold); }
+  /* CONTACT */
+  .contact-bg { background: var(--cream-dark); }
+  .contact-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4rem; align-items: start; max-width: 900px; margin: 0 auto;
+  }
+  .contact-links { display: flex; flex-direction: column; gap: 1rem; }
+  .contact-link {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 6px; text-decoration: none;
+    color: var(--ink); transition: all 0.2s;
+  }
+  .contact-link:hover { border-color: var(--gold); box-shadow: 0 2px 12px rgba(200,150,12,0.15); }
+  .contact-link-icon {
+    width: 40px; height: 40px; border-radius: 6px;
+    background: var(--gold-light); display: flex; align-items: center;
+    justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+  }
+  .contact-link-text { flex: 1; }
+  .contact-link-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .contact-link-value { font-size: 0.875rem; font-weight: 500; color: var(--ink); }
+  .social-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .social-btn {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 1rem; border: 1px solid var(--border);
+    border-radius: 4px; text-decoration: none;
+    font-size: 0.8rem; font-weight: 500; color: var(--muted);
+    background: var(--white); transition: all 0.2s;
+  }
+  .social-btn:hover { border-color: var(--gold); color: var(--gold); }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 768px) {
-            .nav-links { display: none; }
-            .hamburger { display: flex; }
-            .tool-grid { grid-template-columns: 1fr; }
-            .hero h1 { font-size: 2.2rem; }
-            .hero p { font-size: 0.95rem; }
-        }
-    </style>
+  .consult-box {
+    background: var(--ink); border-radius: 10px;
+    padding: 2rem; color: var(--white);
+  }
+  .consult-box h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--white);
+  }
+  .consult-box p { font-size: 0.875rem; color: rgba(255,255,255,0.55); margin-bottom: 1.5rem; }
+  .consult-form { display: flex; flex-direction: column; gap: 0.75rem; }
+  .consult-form input, .consult-form select, .consult-form textarea {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white); border-radius: 4px;
+    padding: 0.65rem 0.875rem; font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem; width: 100%;
+  }
+  .consult-form input::placeholder, .consult-form textarea::placeholder { color: rgba(255,255,255,0.3); }
+  .consult-form select option { background: #1a1a1a; color: var(--white); }
+  .consult-form textarea { resize: vertical; min-height: 80px; }
+  .consult-submit {
+    background: var(--gold); color: var(--ink);
+    border: none; padding: 0.75rem; border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .consult-submit:hover { background: #E8A90E; }
+
+  /* FOOTER */
+  footer {
+    background: #080808; color: rgba(255,255,255,0.4);
+    padding: 2rem 5%; text-align: center;
+    font-size: 0.8rem; border-top: 1px solid rgba(200,150,12,0.15);
+  }
+  footer strong { color: var(--gold); }
+  footer a { color: var(--gold); text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .hero-actions { flex-direction: column; align-items: center; }
+    .services-grid { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-    <div class="nav-logo">Eduxellence <span>Tools</span></div>
-    <ul class="nav-links">
-        <li><a href="#tools">Tools</a></li>
-        <li><a href="https://analytics.eduxellence.org" target="_blank">Analytics</a></li>
-        <li><a href="https://results.eduxellence.org" target="_blank">Results</a></li>
-        <li><a href="https://stats.eduxellence.org" target="_blank">Stats</a></li>
-        <li><a href="#contact">Contact</a></li>
-    </ul>
-    <a href="https://analytics.eduxellence.org" class="nav-cta">Launch Analytics →</a>
-    <div class="hamburger" onclick="this.classList.toggle('open')">
-        <span></span><span></span><span></span>
-    </div>
+  <div class="nav-logo">Eduxellence <span>Solutions</span></div>
+  <ul class="nav-links">
+    <li><a href="/" style="color:var(--muted);">Home</a></li>
+    <li><a href="#" class="active">Analytics</a></li>
+    <li><a href="https://clean.eduxellence.org" target="_blank">Clean</a></li>
+    <li><a href="https://stats.eduxellence.org" target="_blank">Stats</a></li>
+    <li><a href="https://results.eduxellence.org" target="_blank" style="color:var(--gold); font-weight:600;">📊 Results</a></li>
+  </ul>
+  <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" class="nav-cta">Free Consultation</a>
+  <div class="hamburger" onclick="this.classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-    <div style="position:relative;z-index:1;">
-        <div class="hero-badge">Research · Data · Education · Digital</div>
-        <h1>Empowering Research &<br><em>Academic Excellence</em></h1>
-        <p>Professional-grade tools for statistical analysis, data cleaning, academic assessment, and results management — all built for researchers, lecturers, and institutions.</p>
+  <div style="position:relative;z-index:1;">
+    <div class="hero-badge">Advanced Analytics</div>
+    <h1>Data-Driven Insights for <em>Better Decisions</em></h1>
+    <p>Transform your data into actionable insights with our comprehensive analytics services — from descriptive statistics to predictive modeling.</p>
+    <div class="hero-actions">
+      <a href="#services" class="btn-primary">Explore Services ↓</a>
+      <a href="https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20data%20analytics" target="_blank" class="btn-outline">💬 Get Started</a>
     </div>
+  </div>
 </section>
 
-<!-- TRUST BAR -->
-<div class="trust-bar">
-    <div class="trust-item"><div class="trust-dot"></div><strong>4 Powerful Tools</strong>&nbsp;Under One Roof</div>
-    <div class="trust-item"><div class="trust-dot"></div><strong>Research-Grade</strong>&nbsp;Statistical Analysis</div>
-    <div class="trust-item"><div class="trust-dot"></div><strong>Automated</strong>&nbsp;Results Management</div>
-    <div class="trust-item"><div class="trust-dot"></div><strong>Free Tier</strong>&nbsp;Available for Everyone</div>
-</div>
-
-<!-- TOOLS SECTION -->
-<section id="tools" class="tools-section">
-    <div class="section-head center">
-        <span class="section-label">Our Tools</span>
-        <h2 class="section-title">Choose Your Tool</h2>
-        <p class="section-sub">Each tool is purpose-built to solve specific research and academic challenges.</p>
+<!-- SERVICES -->
+<section id="services">
+  <div class="section-head center">
+    <span class="section-label">What We Do</span>
+    <h2 class="section-title">Analytics Services</h2>
+    <p class="section-sub">Comprehensive data analysis and insights for researchers, businesses, and organizations.</p>
+  </div>
+  <div class="services-grid">
+    <div class="service-card">
+      <span class="service-icon">📊</span>
+      <h3>Descriptive Analytics</h3>
+      <p>Summary statistics, frequency distributions, charts, and dashboards to understand your data at a glance.</p>
     </div>
-    <div class="tool-grid">
-
-        <!-- Tool 1: Analytics (expert services) -->
-        <div class="tool-card">
-            <span class="icon">📊</span>
-            <h3>Analytics</h3>
-            <div class="domain">analytics.eduxellence.org</div>
-            <p>Expert research, data analysis, and consulting services — from proofreading to full thesis support, statistical analysis, and digital marketing.</p>
-            <span class="feature-tag">Expert Services</span>
-            <span class="feature-tag green">6 Pillars</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://analytics.eduxellence.org" class="btn-tool" target="_blank">Explore Services →</a>
-            </div>
-        </div>
-
-        <!-- Tool 2: Stats (statistical analysis) -->
-        <div class="tool-card">
-            <span class="icon">📈</span>
-            <h3>Stats</h3>
-            <div class="domain">stats.eduxellence.org</div>
-            <p>Run 12+ statistical tests including T-Test, ANOVA, Regression, PCA, Factor Analysis, and ARIMA — with assumption checking and APA citations.</p>
-            <span class="feature-tag blue">12+ Tests</span>
-            <span class="feature-tag">APA Format</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://stats.eduxellence.org" class="btn-tool blue" target="_blank">Run Analysis →</a>
-            </div>
-        </div>
-
-        <!-- Tool 3: Results (academic assessment) -->
-        <div class="tool-card">
-            <span class="icon">🎓</span>
-            <h3>Results</h3>
-            <div class="domain">results.eduxellence.org</div>
-            <p>Cloud-based Academic Assessment &amp; Results Management Platform. Record assessment scores, auto-calculate results, and generate professional reports.</p>
-            <span class="feature-tag green">Coming Soon</span>
-            <span class="feature-tag">Assessment</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://results.eduxellence.org" class="btn-tool teal" target="_blank">Learn More →</a>
-            </div>
-        </div>
-
-        <!-- Tool 4: Clean (data cleaning) -->
-        <div class="tool-card">
-            <span class="icon">🧹</span>
-            <h3>Clean</h3>
-            <div class="domain">clean.eduxellence.org</div>
-            <p>Clean and prepare your dataset for analysis — remove duplicates, handle missing values, and transform data with a user-friendly interface.</p>
-            <span class="feature-tag blue">Data Prep</span>
-            <span class="feature-tag green">Free</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://clean.eduxellence.org" class="btn-tool" target="_blank">Clean Data →</a>
-            </div>
-        </div>
-
+    <div class="service-card">
+      <span class="service-icon">📈</span>
+      <h3>Statistical Analysis</h3>
+      <p>T-tests, ANOVA, correlation, regression, and more. Rigorous analysis with clear interpretation.</p>
     </div>
+    <div class="service-card">
+      <span class="service-icon">📉</span>
+      <h3>Time Series & Forecasting</h3>
+      <p>Analyze trends, seasonality, and forecast future values using EViews, R, and Python.</p>
+    </div>
+    <div class="service-card">
+      <span class="service-icon">🧮</span>
+      <h3>Econometric Modeling</h3>
+      <p>Advanced econometric analysis for agricultural, financial, and economic research.</p>
+    </div>
+    <div class="service-card">
+      <span class="service-icon">📋</span>
+      <h3>Survey Data Analysis</h3>
+      <p>From questionnaire design to analysis and reporting. We handle survey data from start to finish.</p>
+    </div>
+    <div class="service-card">
+      <span class="service-icon">📊</span>
+      <h3>Data Visualization</h3>
+      <p>Interactive dashboards, charts, and presentations that communicate your insights clearly.</p>
+    </div>
+    <div class="service-card">
+      <span class="service-icon">🤖</span>
+      <h3>Predictive Analytics</h3>
+      <p>Machine learning models to predict outcomes and identify patterns in your data.</p>
+    </div>
+    <div class="service-card">
+      <span class="service-icon">📁</span>
+      <h3>Data Cleaning & Preparation</h3>
+      <p>Clean, validate, and prepare your data for analysis. Excel, SPSS, and R-ready datasets.</p>
+    </div>
+  </div>
 </section>
 
-<!-- CONTACT SECTION -->
-<section id="contact" style="padding: 60px 5%; background: var(--cream-dark);">
-    <div class="section-head center">
-        <span class="section-label">Contact</span>
-        <h2 class="section-title">Get In Touch</h2>
-        <p class="section-sub">Have questions or need custom support? Reach out to us.</p>
+<!-- TOOLS -->
+<section style="background: var(--white);">
+  <div class="section-head center">
+    <span class="section-label">Tools</span>
+    <h2 class="section-title">Software & Platforms</h2>
+    <p class="section-sub">We work with industry-standard tools to deliver accurate and reliable results.</p>
+  </div>
+  <div style="display:flex; justify-content:center; flex-wrap:wrap; gap:2rem; max-width:800px; margin:0 auto; text-align:center;">
+    <div style="font-size:1.2rem; font-weight:600; color:var(--ink);">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">📊</div>
+      SPSS
     </div>
-    <div style="max-width: 600px; margin: 0 auto; text-align: center;">
-        <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
-            <a href="mailto:eduxellencesolutions@gmail.com" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--white); border-radius: 8px; border: 1px solid var(--border); color: var(--ink);">
-                ✉️ eduxellencesolutions@gmail.com
-            </a>
-            <a href="https://wa.me/2348135980311" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--gold); border-radius: 8px; color: var(--white); font-weight: 600;">
-                💬 WhatsApp
-            </a>
-        </div>
-        <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted);">
-            📍 Abuja, Nigeria &nbsp;·&nbsp; Available globally (remote)
-        </p>
-        <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" style="color: var(--muted); font-size: 0.8rem;">📘 Facebook</a>
-            <a href="https://www.linkedin.com/in/jeremiah-sylvester-4aa906414" target="_blank" style="color: var(--muted); font-size: 0.8rem;">🔗 LinkedIn</a>
-            <a href="https://x.com/eduxelsolutions" target="_blank" style="color: var(--muted); font-size: 0.8rem;">𝕏 Twitter/X</a>
-        </div>
+    <div style="font-size:1.2rem; font-weight:600; color:var(--ink);">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">📈</div>
+      EViews
     </div>
+    <div style="font-size:1.2rem; font-weight:600; color:var(--ink);">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">📋</div>
+      Excel
+    </div>
+    <div style="font-size:1.2rem; font-weight:600; color:var(--ink);">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">🐍</div>
+      Python
+    </div>
+    <div style="font-size:1.2rem; font-weight:600; color:var(--ink);">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">📊</div>
+      R
+    </div>
+    <div style="font-size:1.2rem; font-weight:600; color:var(--ink);">
+      <div style="font-size:2.5rem; margin-bottom:0.25rem;">📉</div>
+      Power BI
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact-bg">
+  <div class="section-head center">
+    <span class="section-label">Get In Touch</span>
+    <h2 class="section-title">Need Analytics Help?</h2>
+    <p class="section-sub">Reach out and let's discuss your data needs.</p>
+  </div>
+  <div class="contact-grid">
+    <div>
+      <div class="contact-links">
+        <a href="https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20data%20analytics" target="_blank" class="contact-link">
+          <div class="contact-link-icon">💬</div>
+          <div class="contact-link-text">
+            <div class="contact-link-label">WhatsApp</div>
+            <div class="contact-link-value">+234 813 598 0311</div>
+          </div>
+          <span style="color:var(--gold); font-size:0.85rem;">→</span>
+        </a>
+        <a href="mailto:eduxellencesolutions@gmail.com" class="contact-link">
+          <div class="contact-link-icon">✉️</div>
+          <div class="contact-link-text">
+            <div class="contact-link-label">Email</div>
+            <div class="contact-link-value">eduxellencesolutions@gmail.com</div>
+          </div>
+          <span style="color:var(--gold); font-size:0.85rem;">→</span>
+        </a>
+        <a href="https://results.eduxellence.org" target="_blank" class="contact-link" style="border-color: var(--gold); background: var(--gold-light);">
+          <div class="contact-link-icon" style="background: var(--gold); color: white;">📊</div>
+          <div class="contact-link-text">
+            <div class="contact-link-label">Live Platform</div>
+            <div class="contact-link-value" style="color: var(--gold-dark);">results.eduxellence.org</div>
+          </div>
+          <span style="color:var(--gold); font-size:0.85rem;">→</span>
+        </a>
+      </div>
+      <div class="social-row">
+        <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" rel="noopener noreferrer" class="social-btn">📘 Facebook</a>
+        <a href="https://www.linkedin.com/in/jeremiah-sylvester-4aa906414" target="_blank" rel="noopener noreferrer" class="social-btn">🔗 LinkedIn</a>
+        <a href="https://x.com/eduxelsolutions" target="_blank" rel="noopener noreferrer" class="social-btn">𝕏 Twitter/X</a>
+      </div>
+      <p style="font-size:0.78rem; color:var(--muted); margin-top:1rem;">📍 Abuja, Nigeria &nbsp;·&nbsp; Available globally (remote)</p>
+    </div>
+    <div class="consult-box">
+      <h3>Request Analytics Support</h3>
+      <p>Tell us about your data analysis needs and we'll get back to you within 24 hours.</p>
+      <div class="consult-form">
+        <input type="text" placeholder="Your full name" id="cf-name">
+        <input type="email" placeholder="Your email address" id="cf-email">
+        <select id="cf-service">
+          <option value="" disabled selected>Select a service</option>
+          <option>Descriptive Analytics</option>
+          <option>Statistical Analysis</option>
+          <option>Time Series & Forecasting</option>
+          <option>Econometric Modeling</option>
+          <option>Survey Data Analysis</option>
+          <option>Data Visualization</option>
+          <option>Predictive Analytics</option>
+          <option>Data Cleaning & Preparation</option>
+        </select>
+        <textarea placeholder="Briefly describe your project or what you need help with..." id="cf-msg"></textarea>
+        <button class="consult-submit" onclick="submitConsult()">Send Enquiry →</button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-    <p style="margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1rem; color:rgba(255,255,255,0.7);">
-        Eduxellence <strong>Tools</strong>
-    </p>
-    <p>© 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria</p>
-    <p style="margin-top: 0.3rem;">
-        <a href="https://analytics.eduxellence.org">Analytics</a> &middot;
-        <a href="https://stats.eduxellence.org">Stats</a> &middot;
-        <a href="https://results.eduxellence.org">Results</a> &middot;
-        <a href="https://clean.eduxellence.org">Clean</a>
-    </p>
+  <p style="margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1rem; color:rgba(255,255,255,0.7);">
+    Eduxellence <strong>Solutions</strong>
+  </p>
+  <p>
+    © 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria &nbsp;·&nbsp;
+    <a href="mailto:eduxellencesolutions@gmail.com">eduxellencesolutions@gmail.com</a> &nbsp;·&nbsp;
+    <a href="https://results.eduxellence.org" target="_blank">📊 results.eduxellence.org</a>
+  </p>
 </footer>
 
 <script>
-    // Mobile hamburger menu
-    document.querySelector('.hamburger')?.addEventListener('click', function() {
-        const nav = document.querySelector('.nav-links');
-        if (nav) {
-            nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
-            nav.style.flexDirection = 'column';
-            nav.style.position = 'absolute';
-            nav.style.top = '68px';
-            nav.style.left = '0';
-            nav.style.right = '0';
-            nav.style.background = 'rgba(253,250,244,0.98)';
-            nav.style.padding = '1rem 2rem';
-            nav.style.borderBottom = '1px solid var(--border)';
-            nav.style.gap = '1rem';
-        }
-    });
+function submitConsult() {
+  const name = document.getElementById('cf-name').value.trim();
+  const email = document.getElementById('cf-email').value.trim();
+  const service = document.getElementById('cf-service').value;
+  const msg = document.getElementById('cf-msg').value.trim();
+  if (!name || !service) {
+    alert('Please enter your name and select a service.');
+    return;
+  }
+  const text = `Hello! I need analytics support.
+
+Name: ${name}
+Email: ${email || 'Not provided'}
+Service Needed: ${service}
+Message: ${msg || 'No additional message.'}`;
+  const encoded = encodeURIComponent(text);
+  window.open(`https://wa.me/2348135980311?text=${encoded}`, '_blank');
+}
 </script>
 </body>
 </html>
