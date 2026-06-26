@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eduxellence — Research-Grade Academic & Statistical Tools</title>
+    <meta name="description" content="Eduxellence provides research-grade statistical analysis, data cleaning, academic assessment, and results management tools for researchers, lecturers, and institutions.">
+    <link rel="icon" type="image/x-icon" href="/Eduxellence.ico">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* ── RESET ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --ny: #0B1829;
+            --ny2: #112240;
+            --bl: #1E6BFF;
+            --tl: #0FC9A0;
+            --wh: #fff;
+            --of: #F7F9FC;
+            --sl: #64748B;
+            --bd: #E2E8F0;
+            --ok: #16A34A;
+            --er: #DC2626;
+            --wn: #D97706;
+            --tx: #0F172A;
+            --txM: #475569;
+            --gold: #C8960C;
+            --gold-light: #F5E6B8;
+            --gold-dark: #8B6508;
+            --ink: #0D0D0D;
+            --ink-soft: #2A2A2A;
+            --cream: #FDFAF4;
+            --cream-dark: #F4EED8;
+            --muted: #6B6456;
+            --border: rgba(200,150,12,0.2);
+            --shL: 0 12px 40px rgba(0,0,0,.14);
+            --r16: 16px;
+            --r24: 24px;
+        }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--cream);
+            color: var(--ink);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        a { color: var(--bl); text-decoration: none; }
+
+        /* ── NAV ── */
+        nav {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            background: rgba(253,250,244,0.96);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            padding: 0 5%;
+            display: flex; align-items: center; justify-content: space-between;
+            height: 68px;
+        }
+        .nav-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem; font-weight: 700;
+            color: var(--ink);
+            letter-spacing: -0.02em;
+        }
+        .nav-logo span { color: var(--gold); }
+        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
+        .nav-links a {
+            font-size: 0.875rem; font-weight: 500;
+            color: var(--muted); text-decoration: none;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--gold); }
+        .nav-cta {
+            background: var(--gold); color: var(--white);
+            padding: 0.5rem 1.25rem; border-radius: 4px;
+            font-size: 0.875rem; font-weight: 600;
+            text-decoration: none; transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .nav-cta:hover { background: var(--gold-dark); }
+        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+        .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
+
+        /* ── HERO ── */
+        .hero {
+            min-height: 100vh;
+            background: linear-gradient(160deg, #0D0D0D 0%, #1A1508 60%, #2A1F08 100%);
+            display: flex; align-items: center; justify-content: center;
+            text-align: center;
+            padding: 120px 5% 80px;
+            position: relative;
+            overflow: hidden;
+            margin-top: 0;
+        }
+        .hero::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,150,12,0.12) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-badge {
+            display: inline-block;
+            border: 1px solid rgba(200,150,12,0.5);
+            color: var(--gold); font-size: 0.75rem; font-weight: 600;
+            letter-spacing: 0.12em; text-transform: uppercase;
+            padding: 0.4rem 1rem; border-radius: 2px;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .hero h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(2.5rem, 6vw, 4.5rem);
+            font-weight: 700; color: var(--white);
+            line-height: 1.15; margin-bottom: 1.5rem;
+            max-width: 800px;
+            position: relative;
+        }
+        .hero h1 em { color: var(--gold); font-style: normal; }
+        .hero p {
+            font-size: 1.1rem; color: rgba(255,255,255,0.65);
+            max-width: 560px; margin: 0 auto 2.5rem;
+            font-weight: 300;
+            position: relative;
+        }
+
+        /* ── TOOL CARDS ── */
+        .tools-section {
+            padding: 80px 5%;
+            background: var(--cream);
+        }
+        .section-label {
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
+            text-transform: uppercase; color: var(--gold);
+            margin-bottom: 0.75rem; display: block;
+        }
+        .section-title {
+            font-family: 'Playfair Display', serif;
+            font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+            font-weight: 700; color: var(--ink);
+            line-height: 1.2; margin-bottom: 1rem;
+        }
+        .section-sub {
+            font-size: 1rem; color: var(--muted);
+            max-width: 560px; font-weight: 300;
+        }
+        .section-head { margin-bottom: 3.5rem; }
+        .center { text-align: center; }
+        .center .section-sub { margin: 0 auto; }
+
+        .tool-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .tool-card {
+            background: var(--wh);
+            border-radius: 12px;
+            box-shadow: var(--shL);
+            padding: 2rem 1.75rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+        .tool-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 50px rgba(0,0,0,.12);
+            border-color: var(--gold);
+        }
+        .tool-card .icon {
+            font-size: 2.8rem;
+            margin-bottom: 0.75rem;
+            display: block;
+        }
+        .tool-card h3 {
+            font-family: 'Playfair Display', serif;
+            font-weight: 700;
+            font-size: 1.2rem;
+            color: var(--ink);
+            margin-bottom: 0.2rem;
+        }
+        .tool-card .domain {
+            font-size: 0.7rem;
+            color: var(--sl);
+            font-family: 'JetBrains Mono', monospace;
+            background: var(--of);
+            padding: 0.15rem 0.6rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 0.6rem;
+        }
+        .tool-card p {
+            font-size: 0.85rem;
+            color: var(--txM);
+            line-height: 1.6;
+            margin-bottom: 1rem;
+        }
+        .tool-card .btn-tool {
+            display: inline-block;
+            font-family: 'DM Sans', sans-serif;
+            font-weight: 600;
+            font-size: 0.8rem;
+            padding: 0.5rem 1.5rem;
+            border-radius: 6px;
+            background: var(--gold);
+            color: var(--ink);
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+        .tool-card .btn-tool:hover {
+            background: var(--gold-dark);
+            color: var(--white);
+            transform: translateY(-2px);
+        }
+        .tool-card .btn-tool.teal {
+            background: var(--tl);
+            color: var(--ny);
+        }
+        .tool-card .btn-tool.teal:hover {
+            background: #0BA88A;
+            color: var(--white);
+        }
+        .tool-card .btn-tool.blue {
+            background: var(--bl);
+            color: var(--wh);
+        }
+        .tool-card .btn-tool.blue:hover {
+            background: #1452CC;
+        }
+        .tool-card .feature-tag {
+            font-size: 0.55rem;
+            background: rgba(200,150,12,0.15);
+            color: var(--gold-dark);
+            padding: 0.15rem 0.6rem;
+            border-radius: 10px;
+            display: inline-block;
+            margin-top: 0.2rem;
+            font-weight: 600;
+        }
+        .tool-card .feature-tag.green { background: rgba(15,201,160,0.15); color: #0BA88A; }
+        .tool-card .feature-tag.blue { background: rgba(30,107,255,0.12); color: #1452CC; }
+
+        /* ── TRUST BAR ── */
+        .trust-bar {
+            background: var(--white);
+            border-bottom: 1px solid var(--border);
+            padding: 1.5rem 5%;
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 2.5rem;
+        }
+        .trust-item {
+            display: flex; align-items: center; gap: 0.6rem;
+            font-size: 0.875rem; font-weight: 500; color: var(--muted);
+        }
+        .trust-item strong { color: var(--ink); }
+        .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+
+        /* ── FOOTER ── */
+        footer {
+            background: #080808; color: rgba(255,255,255,0.4);
+            padding: 2rem 5%; text-align: center;
+            font-size: 0.8rem; border-top: 1px solid rgba(200,150,12,0.15);
+        }
+        footer strong { color: var(--gold); }
+        footer a { color: var(--gold); }
+
+        /* ── RESPONSIVE ── */
+        @media (max-width: 768px) {
+            .nav-links { display: none; }
+            .hamburger { display: flex; }
+            .tool-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+            .hero p { font-size: 0.95rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+    <div class="nav-logo">Eduxellence <span>Tools</span></div>
+    <ul class="nav-links">
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="https://analytics.eduxellence.org" target="_blank">Analytics</a></li>
+        <li><a href="https://results.eduxellence.org" target="_blank">Results</a></li>
+        <li><a href="https://stats.eduxellence.org" target="_blank">Stats</a></li>
+        <li><a href="#contact">Contact</a></li>
+    </ul>
+    <a href="https://analytics.eduxellence.org" class="nav-cta">Launch Analytics →</a>
+    <div class="hamburger" onclick="this.classList.toggle('open')">
+        <span></span><span></span><span></span>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <div style="position:relative;z-index:1;">
+        <div class="hero-badge">Research · Data · Education · Digital</div>
+        <h1>Empowering Research &<br><em>Academic Excellence</em></h1>
+        <p>Professional-grade tools for statistical analysis, data cleaning, academic assessment, and results management — all built for researchers, lecturers, and institutions.</p>
+    </div>
+</section>
+
+<!-- TRUST BAR -->
+<div class="trust-bar">
+    <div class="trust-item"><div class="trust-dot"></div><strong>4 Powerful Tools</strong>&nbsp;Under One Roof</div>
+    <div class="trust-item"><div class="trust-dot"></div><strong>Research-Grade</strong>&nbsp;Statistical Analysis</div>
+    <div class="trust-item"><div class="trust-dot"></div><strong>Automated</strong>&nbsp;Results Management</div>
+    <div class="trust-item"><div class="trust-dot"></div><strong>Free Tier</strong>&nbsp;Available for Everyone</div>
+</div>
+
+<!-- TOOLS SECTION -->
+<section id="tools" class="tools-section">
+    <div class="section-head center">
+        <span class="section-label">Our Tools</span>
+        <h2 class="section-title">Choose Your Tool</h2>
+        <p class="section-sub">Each tool is purpose-built to solve specific research and academic challenges.</p>
+    </div>
+    <div class="tool-grid">
+
+        <!-- Tool 1: Analytics (expert services) -->
+        <div class="tool-card">
+            <span class="icon">📊</span>
+            <h3>Analytics</h3>
+            <div class="domain">analytics.eduxellence.org</div>
+            <p>Expert research, data analysis, and consulting services — from proofreading to full thesis support, statistical analysis, and digital marketing.</p>
+            <span class="feature-tag">Expert Services</span>
+            <span class="feature-tag green">6 Pillars</span>
+            <div style="margin-top: 1rem;">
+                <a href="https://analytics.eduxellence.org" class="btn-tool" target="_blank">Explore Services →</a>
+            </div>
+        </div>
+
+        <!-- Tool 2: Stats (statistical analysis) -->
+        <div class="tool-card">
+            <span class="icon">📈</span>
+            <h3>Stats</h3>
+            <div class="domain">stats.eduxellence.org</div>
+            <p>Run 12+ statistical tests including T-Test, ANOVA, Regression, PCA, Factor Analysis, and ARIMA — with assumption checking and APA citations.</p>
+            <span class="feature-tag blue">12+ Tests</span>
+            <span class="feature-tag">APA Format</span>
+            <div style="margin-top: 1rem;">
+                <a href="https://stats.eduxellence.org" class="btn-tool blue" target="_blank">Run Analysis →</a>
+            </div>
+        </div>
+
+        <!-- Tool 3: Results (academic assessment) -->
+        <div class="tool-card">
+            <span class="icon">🎓</span>
+            <h3>Results</h3>
+            <div class="domain">results.eduxellence.org</div>
+            <p>Cloud-based Academic Assessment &amp; Results Management Platform. Record assessment scores, auto-calculate results, and generate professional reports.</p>
+            <span class="feature-tag green">Coming Soon</span>
+            <span class="feature-tag">Assessment</span>
+            <div style="margin-top: 1rem;">
+                <a href="https://results.eduxellence.org" class="btn-tool teal" target="_blank">Learn More →</a>
+            </div>
+        </div>
+
+        <!-- Tool 4: Clean (data cleaning) -->
+        <div class="tool-card">
+            <span class="icon">🧹</span>
+            <h3>Clean</h3>
+            <div class="domain">clean.eduxellence.org</div>
+            <p>Clean and prepare your dataset for analysis — remove duplicates, handle missing values, and transform data with a user-friendly interface.</p>
+            <span class="feature-tag blue">Data Prep</span>
+            <span class="feature-tag green">Free</span>
+            <div style="margin-top: 1rem;">
+                <a href="https://clean.eduxellence.org" class="btn-tool" target="_blank">Clean Data →</a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- CONTACT SECTION -->
+<section id="contact" style="padding: 60px 5%; background: var(--cream-dark);">
+    <div class="section-head center">
+        <span class="section-label">Contact</span>
+        <h2 class="section-title">Get In Touch</h2>
+        <p class="section-sub">Have questions or need custom support? Reach out to us.</p>
+    </div>
+    <div style="max-width: 600px; margin: 0 auto; text-align: center;">
+        <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
+            <a href="mailto:eduxellencesolutions@gmail.com" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--white); border-radius: 8px; border: 1px solid var(--border); color: var(--ink);">
+                ✉️ eduxellencesolutions@gmail.com
+            </a>
+            <a href="https://wa.me/2348135980311" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--gold); border-radius: 8px; color: var(--white); font-weight: 600;">
+                💬 WhatsApp
+            </a>
+        </div>
+        <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted);">
+            📍 Abuja, Nigeria &nbsp;·&nbsp; Available globally (remote)
+        </p>
+        <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+            <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" style="color: var(--muted); font-size: 0.8rem;">📘 Facebook</a>
+            <a href="https://www.linkedin.com/in/jeremiah-sylvester-4aa906414" target="_blank" style="color: var(--muted); font-size: 0.8rem;">🔗 LinkedIn</a>
+            <a href="https://x.com/eduxelsolutions" target="_blank" style="color: var(--muted); font-size: 0.8rem;">𝕏 Twitter/X</a>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+    <p style="margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1rem; color:rgba(255,255,255,0.7);">
+        Eduxellence <strong>Tools</strong>
+    </p>
+    <p>© 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria</p>
+    <p style="margin-top: 0.3rem;">
+        <a href="https://analytics.eduxellence.org">Analytics</a> &middot;
+        <a href="https://stats.eduxellence.org">Stats</a> &middot;
+        <a href="https://results.eduxellence.org">Results</a> &middot;
+        <a href="https://clean.eduxellence.org">Clean</a>
+    </p>
+</footer>
+
+<script>
+    // Mobile hamburger menu
+    document.querySelector('.hamburger')?.addEventListener('click', function() {
+        const nav = document.querySelector('.nav-links');
+        if (nav) {
+            nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
+            nav.style.flexDirection = 'column';
+            nav.style.position = 'absolute';
+            nav.style.top = '68px';
+            nav.style.left = '0';
+            nav.style.right = '0';
+            nav.style.background = 'rgba(253,250,244,0.98)';
+            nav.style.padding = '1rem 2rem';
+            nav.style.borderBottom = '1px solid var(--border)';
+            nav.style.gap = '1rem';
+        }
+    });
+</script>
+</body>
+</html>
