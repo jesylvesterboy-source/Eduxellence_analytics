@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Services & Pricing — Eduxellence Solutions</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C8960C;
+    --gold-light: #F5E6B8;
+    --gold-dark: #8B6508;
+    --ink: #0D0D0D;
+    --ink-soft: #2A2A2A;
+    --cream: #FDFAF4;
+    --cream-dark: #F4EED8;
+    --white: #FFFFFF;
+    --muted: #6B6456;
+    --border: rgba(200,150,12,0.2);
+    --card-bg: rgba(255,255,255,0.95);
+    --shadow: 0 4px 32px rgba(13,13,13,0.08);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(253,250,244,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 5%;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--muted); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    background: var(--gold); color: var(--white);
+    padding: 0.5rem 1.25rem; border-radius: 4px;
+    font-size: 0.875rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { background: var(--gold-dark); }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
+
+  /* PAGE HEADER */
+  .page-hero {
+    background: linear-gradient(160deg, #0D0D0D 0%, #1A1508 60%, #2A1F08 100%);
+    padding: 120px 5% 60px;
+    text-align: center;
+    position: relative;
+  }
+  .page-hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700; color: var(--white);
+    line-height: 1.15; margin-bottom: 1rem;
+  }
+  .page-hero h1 em { color: var(--gold); font-style: normal; }
+  .page-hero p {
+    font-size: 1.1rem; color: rgba(255,255,255,0.65);
+    max-width: 560px; margin: 0 auto;
+    font-weight: 300;
+  }
+
+  /* SECTIONS */
+  section { padding: 90px 5%; }
+  .section-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.75rem; display: block;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700; color: var(--ink);
+    line-height: 1.2; margin-bottom: 1rem;
+  }
+  .section-sub {
+    font-size: 1rem; color: var(--muted);
+    max-width: 560px; font-weight: 300;
+  }
+  .section-head { margin-bottom: 3.5rem; }
+  .center { text-align: center; }
+  .center .section-sub { margin: 0 auto; }
+
+  .services-bg { background: var(--white); }
+  .pillar { margin-bottom: 4rem; }
+  .pillar-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.5rem; padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .pillar-icon {
+    width: 44px; height: 44px; border-radius: 6px;
+    background: var(--gold-light); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 1.25rem;
+  }
+  .pillar-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+  .pillar-sub { font-size: 0.875rem; color: var(--muted); }
+  .tier-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  .tier-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; transition: box-shadow 0.2s;
+    background: var(--card-bg);
+  }
+  .tier-card:hover { box-shadow: var(--shadow); }
+  .tier-card.featured {
+    border-color: var(--gold); border-width: 2px;
+  }
+  .tier-head {
+    padding: 1.25rem 1.5rem;
+    background: var(--cream-dark);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .tier-card.featured .tier-head { background: var(--gold-light); }
+  .tier-name { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+  .tier-label { font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+  .tier-price { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--gold-dark); white-space: nowrap; }
+  .tier-price span { font-size: 0.8rem; font-weight: 400; font-family: 'DM Sans', sans-serif; color: var(--muted); }
+  .tier-body { padding: 1.25rem 1.5rem; }
+  .tier-body ul { list-style: none; margin-bottom: 1.25rem; }
+  .tier-body ul li {
+    font-size: 0.875rem; color: var(--ink-soft);
+    padding: 0.3rem 0;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+  }
+  .tier-body ul li::before { content: '✓'; color: var(--gold); font-weight: 700; flex-shrink: 0; margin-top: 0.05rem; }
+  .tier-btn {
+    display: block; text-align: center;
+    background: var(--ink); color: var(--white);
+    padding: 0.65rem 1rem; border-radius: 4px;
+    font-size: 0.85rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .tier-card.featured .tier-btn { background: var(--gold); color: var(--ink); }
+  .tier-btn:hover { background: var(--gold); color: var(--ink); }
+  .featured-badge {
+    background: var(--gold); color: var(--ink);
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 2px;
+    margin-bottom: 0.5rem; display: inline-block;
+  }
+
+  /* CTA */
+  .cta-section {
+    background: var(--ink); color: var(--white);
+    text-align: center; padding: 4rem 5%;
+  }
+  .cta-section h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3vw, 2.5rem);
+    font-weight: 700; color: var(--white);
+    margin-bottom: 1rem;
+  }
+  .cta-section p { font-size: 1rem; color: rgba(255,255,255,0.55); max-width: 500px; margin: 0 auto 1.5rem; }
+  .cta-btn {
+    display: inline-block;
+    background: var(--gold); color: var(--ink);
+    padding: 0.875rem 2.5rem; border-radius: 4px;
+    font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .cta-btn:hover { background: #E8A90E; }
+
+  /* FOOTER */
+  footer {
+    background: #080808; color: rgba(255,255,255,0.4);
+    padding: 2rem 5%; text-align: center;
+    font-size: 0.8rem; border-top: 1px solid rgba(200,150,12,0.15);
+  }
+  footer strong { color: var(--gold); }
+  footer a { color: var(--gold); text-decoration: none; }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .tier-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">Eduxellence <span>Solutions</span></div>
+  <ul class="nav-links">
+    <li><a href="https://eduxellence.org">Home</a></li>
+    <li><a href="https://eduxellence.org/services" style="color:var(--gold);">Services</a></li>
+    <li><a href="https://eduxellence.org/free-tools.html">Free Tools</a></li>
+    <li><a href="https://eduxellence.org/#contact">Contact</a></li>
+  </ul>
+  <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" class="nav-cta">Free Consultation</a>
+  <div class="hamburger" onclick="this.classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-hero">
+  <h1>Services & <em>Pricing</em></h1>
+  <p>Tiered packages so every client — student, researcher, NGO, or business — finds the right fit.</p>
+</div>
+
+<!-- SERVICES -->
+<section id="services" class="services-bg">
+  <div class="section-head center">
+    <span class="section-label">What We Offer</span>
+    <h2 class="section-title">Our Service Pillars</h2>
+    <p class="section-sub">Six pillars of expertise, each with flexible tiers to match your scope and budget.</p>
+  </div>
+
+  <!-- PILLAR 1 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">📚</div>
+      <div>
+        <div class="pillar-title">Research & Academic Services</div>
+        <div class="pillar-sub">From undergraduate support to full research consultation</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Starter</div>
+            <div class="tier-label">Proofreading & Formatting</div>
+          </div>
+          <div class="tier-price">$50</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Research proofreading (up to 5,000 words)</li>
+            <li>Academic formatting (APA, MLA, Harvard, Chicago)</li>
+            <li>Citation cleanup & reference verification</li>
+            <li>1 revision round</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Research%20Starter%20package%20($50)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Most Popular</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">Literature Review & Editing</div>
+          </div>
+          <div class="tier-price">$150</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Literature review (up to 30 sources)</li>
+            <li>Research editing & proofreading</li>
+            <li>Questionnaire / survey design</li>
+            <li>Academic formatting + citation management</li>
+            <li>2 revision rounds</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Research%20Standard%20package%20($150)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Premium</div>
+            <div class="tier-label">Thesis & Dissertation Support</div>
+          </div>
+          <div class="tier-price">$300<span>/chapter</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Chapter-by-chapter thesis support</li>
+            <li>Research proposal writing</li>
+            <li>Methodology guidance & design</li>
+            <li>Data collection planning</li>
+            <li>Unlimited revisions</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Thesis%20Support%20package%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Elite</div>
+            <div class="tier-label">Academic Research Consulting</div>
+          </div>
+          <div class="tier-price">$1,000<span>+</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full proposal-to-defense support</li>
+            <li>Systematic review support</li>
+            <li>Research publication preparation</li>
+            <li>Grant research assistance</li>
+            <li>Dedicated weekly check-ins</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Academic%20Research%20Consulting%20($1000+)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 2 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">📊</div>
+      <div>
+        <div class="pillar-title">Data Analysis & Statistics</div>
+        <div class="pillar-sub">SPSS · EViews · Excel · R · Python</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Basic</div>
+            <div class="tier-label">Data Cleaning & Entry</div>
+          </div>
+          <div class="tier-price">$50</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Data entry & coding</li>
+            <li>Data cleaning & validation</li>
+            <li>Descriptive statistics</li>
+            <li>Excel / SPSS ready datasets</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Data%20Cleaning%20Basic%20($50)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Best Value</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">Statistical Analysis</div>
+          </div>
+          <div class="tier-price">$150</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>T-tests, ANOVA, Correlation</li>
+            <li>Regression analysis</li>
+            <li>Survey data analysis</li>
+            <li>Results interpretation</li>
+            <li>Statistical report writing</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Statistical%20Analysis%20Standard%20($150)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Advanced</div>
+            <div class="tier-label">Econometric & Time Series</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Econometric analysis (EViews)</li>
+            <li>Time series analysis</li>
+            <li>Agricultural data analysis</li>
+            <li>Data visualization & dashboards</li>
+            <li>PowerPoint data presentation</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Econometric%20Analysis%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Elite</div>
+            <div class="tier-label">Statistical Consulting</div>
+          </div>
+          <div class="tier-price">$500<span>+</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full research data analysis</li>
+            <li>Monitoring & Evaluation support</li>
+            <li>Custom dashboard creation</li>
+            <li>NGO / business data reporting</li>
+            <li>Ongoing statistical consulting</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Statistical%20Consulting%20($500+)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 3 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">🎓</div>
+      <div>
+        <div class="pillar-title">Teaching & Tutoring</div>
+        <div class="pillar-sub">6+ years experience across English, Research, SPSS & more</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Single Session</div>
+            <div class="tier-label">1-Hour Tutoring</div>
+          </div>
+          <div class="tier-price">$20<span>/hr</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>English / TEFL tutoring</li>
+            <li>WAEC / NECO preparation</li>
+            <li>Statistics & SPSS basics</li>
+            <li>Academic writing coaching</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20a%20single%20tutoring%20session" target="_blank" class="tier-btn">Book Session →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Most Popular</div>
+            <div class="tier-name">Package</div>
+            <div class="tier-label">5-Session Bundle</div>
+          </div>
+          <div class="tier-price">$100</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>5 one-hour sessions (save 20%)</li>
+            <li>Agric Economics / Research Methods</li>
+            <li>SPSS hands-on training</li>
+            <li>Session notes & study resources</li>
+            <li>Flexible scheduling</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%205-Session%20Tutoring%20Bundle%20($100)" target="_blank" class="tier-btn">Book Bundle →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Workshop</div>
+            <div class="tier-label">Research Training Workshop</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full-day or multi-session workshop</li>
+            <li>SPSS, Research Methodology or Academic Writing</li>
+            <li>Group or 1-on-1 format</li>
+            <li>Certificate of participation</li>
+            <li>Training materials included</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20a%20Research%20Training%20Workshop%20($300)" target="_blank" class="tier-btn">Book Workshop →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 4 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">✍️</div>
+      <div>
+        <div class="pillar-title">Content Writing & Creation</div>
+        <div class="pillar-sub">SEO articles, educational content, e-books & more</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Basic</div>
+            <div class="tier-label">Blog & Social Content</div>
+          </div>
+          <div class="tier-price">$50</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>2 blog posts (800–1,000 words each)</li>
+            <li>Social media content (1 week)</li>
+            <li>Newsletter writing</li>
+            <li>Basic SEO optimisation</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Content%20Basic%20package%20($50)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Best Value</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">SEO Articles & Web Copy</div>
+          </div>
+          <div class="tier-price">$150</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>4 SEO-optimised articles (1,200+ words)</li>
+            <li>Website content (up to 5 pages)</li>
+            <li>Research-based articles</li>
+            <li>Script writing for videos</li>
+            <li>Study guides or course notes</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Content%20Standard%20package%20($150)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Premium</div>
+            <div class="tier-label">E-Book & Long-Form</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>E-book writing (up to 10,000 words)</li>
+            <li>Educational content packages</li>
+            <li>Full content strategy</li>
+            <li>Formatted, publication-ready output</li>
+            <li>2 revision rounds</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20E-Book%20Content%20package%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 5 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">📱</div>
+      <div>
+        <div class="pillar-title">Digital Marketing</div>
+        <div class="pillar-sub">Growth strategy, social media management & copywriting</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Starter</div>
+            <div class="tier-label">Social Media Setup</div>
+          </div>
+          <div class="tier-price">$100</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Facebook / WhatsApp marketing setup</li>
+            <li>Content calendar (1 month)</li>
+            <li>Basic Canva graphic designs (10)</li>
+            <li>Marketing copywriting</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Starter%20($100)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Most Popular</div>
+            <div class="tier-name">Growth</div>
+            <div class="tier-label">Monthly Management</div>
+          </div>
+          <div class="tier-price">$300<span>/mo</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full social media management</li>
+            <li>Community management</li>
+            <li>Email marketing campaigns</li>
+            <li>Lead generation strategy</li>
+            <li>Monthly performance report</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Growth%20($300/mo)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Premium</div>
+            <div class="tier-label">Full Growth Strategy</div>
+          </div>
+          <div class="tier-price">$500<span>/mo</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>All Growth package features</li>
+            <li>Paid ads strategy & support</li>
+            <li>Brand content production</li>
+            <li>Funnel copywriting</li>
+            <li>Weekly strategy calls</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Premium%20($500/mo)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 6 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">💼</div>
+      <div>
+        <div class="pillar-title">High-Ticket Sales & Lead Generation</div>
+        <div class="pillar-sub">Appointment setting, lead qualification & sales support</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Starter</div>
+            <div class="tier-label">Lead Qualification</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Lead research & list building</li>
+            <li>Lead qualification calls</li>
+            <li>CRM data entry & management</li>
+            <li>Weekly leads report</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Lead%20Generation%20Starter%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">High Impact</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">Appointment Setting</div>
+          </div>
+          <div class="tier-price">$500</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Appointment setting (monthly retainer)</li>
+            <li>Discovery call support</li>
+            <li>Sales funnel support</li>
+            <li>Customer relationship management</li>
+            <li>Performance tracking</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Appointment%20Setting%20Standard%20($500)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Elite</div>
+            <div class="tier-label">Full Sales Support</div>
+          </div>
+          <div class="tier-price">$1,500<span>+</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>High-ticket closing support</li>
+            <li>Full sales pipeline management</li>
+            <li>Outreach copywriting & scripts</li>
+            <li>Dedicated sales strategy sessions</li>
+            <li>Coaches, Agencies & SaaS focus</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Full%20Sales%20Support%20Elite%20($1500+)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <h2>Ready to Get Started?</h2>
+  <p>Book a free consultation and let's discuss how we can help you achieve your goals.</p>
+  <a href="https://wa.me/2348135980311?text=Hello%2C%20I'd%20like%20to%20book%20a%20free%20consultation" target="_blank" class="cta-btn">📞 Book Free Consultation</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1rem; color:rgba(255,255,255,0.7);">
+    Eduxellence <strong>Solutions</strong>
+  </p>
+  <p>© 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria &nbsp;·&nbsp;
+    <a href="mailto:eduxellencesolutions@gmail.com">eduxellencesolutions@gmail.com</a>
+  </p>
+</footer>
+
+</body>
+</html>
