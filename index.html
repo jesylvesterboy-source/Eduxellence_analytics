@@ -48,7 +48,7 @@
     letter-spacing: -0.02em;
   }
   .nav-logo span { color: var(--gold); }
-  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
   .nav-links a {
     font-size: 0.875rem; font-weight: 500;
     color: var(--muted); text-decoration: none;
@@ -63,6 +63,14 @@
     white-space: nowrap;
   }
   .nav-cta:hover { background: var(--gold-dark); }
+  .nav-cta-results {
+    background: var(--ink); color: var(--white);
+    padding: 0.5rem 1.25rem; border-radius: 4px;
+    font-size: 0.875rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .nav-cta-results:hover { background: #2A2A2A; }
   .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
   .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
 
@@ -119,6 +127,32 @@
     display: inline-flex; align-items: center; gap: 0.5rem;
   }
   .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-results {
+    background: #1a73e8; color: var(--white);
+    padding: 0.875rem 2rem; border-radius: 4px;
+    font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-results:hover { background: #1557b0; transform: translateY(-1px); }
+
+  /* PLATFORM ANNOUNCEMENT */
+  .platform-announce {
+    background: linear-gradient(135deg, var(--gold-light), #E8D5A0);
+    padding: 1.5rem 5%;
+    text-align: center;
+    border-bottom: 2px solid var(--gold);
+  }
+  .platform-announce p {
+    font-size: 1rem; color: var(--ink-soft);
+    max-width: 800px; margin: 0 auto;
+  }
+  .platform-announce strong { color: var(--gold-dark); }
+  .platform-announce a {
+    color: var(--gold-dark); font-weight: 700;
+    text-decoration: underline;
+  }
+  .platform-announce a:hover { color: var(--ink); }
 
   /* TRUST BAR */
   .trust-bar {
@@ -238,6 +272,38 @@
     text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 2px;
     margin-bottom: 0.5rem; display: inline-block;
   }
+
+  /* NEW: RESULTS PLATFORM SECTION */
+  .results-bg {
+    background: linear-gradient(135deg, #0D1B2A, #1B3A5C);
+    color: var(--white);
+  }
+  .results-bg .section-title { color: var(--white); }
+  .results-bg .section-sub { color: rgba(255,255,255,0.6); }
+  .results-features {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem; max-width: 800px; margin: 0 auto;
+  }
+  .results-feature {
+    text-align: center; padding: 1.5rem;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+  }
+  .results-feature .icon { font-size: 2rem; margin-bottom: 0.5rem; display: block; }
+  .results-feature h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .results-feature p { font-size: 0.8rem; color: rgba(255,255,255,0.5); }
+  .results-cta {
+    text-align: center; margin-top: 2rem;
+  }
+  .btn-results-big {
+    background: var(--gold); color: var(--ink);
+    padding: 1rem 2.5rem; border-radius: 4px;
+    font-size: 1.1rem; font-weight: 700;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.75rem;
+  }
+  .btn-results-big:hover { background: #E8A90E; transform: translateY(-2px); box-shadow: 0 8px 24px rgba(200,150,12,0.3); }
 
   /* PAYMENT */
   .payment-bg { background: var(--ink); color: var(--white); }
@@ -384,6 +450,7 @@
     .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
     .tier-grid { grid-template-columns: 1fr; }
     .hero-actions { flex-direction: column; align-items: center; }
+    .platform-announce p { font-size: 0.875rem; }
   }
 </style>
 </head>
@@ -397,12 +464,22 @@
     <li><a href="#payment">Payment</a></li>
     <li><a href="#faq">FAQ</a></li>
     <li><a href="#contact">Contact</a></li>
+    <li><a href="https://results.eduxellence.org" target="_blank" style="color:var(--gold); font-weight:600;">📊 Results Portal</a></li>
   </ul>
   <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" class="nav-cta">Free Consultation</a>
   <div class="hamburger" onclick="this.classList.toggle('open')">
     <span></span><span></span><span></span>
   </div>
 </nav>
+
+<!-- PLATFORM ANNOUNCEMENT - NEW! -->
+<div class="platform-announce">
+  <p>
+    🎉 <strong>NEW!</strong> Our School Management System is now LIVE! 
+    <a href="https://results.eduxellence.org" target="_blank">results.eduxellence.org</a> — 
+    Manage students, classes, scores, and generate reports instantly.
+  </p>
+</div>
 
 <!-- HERO -->
 <section class="hero">
@@ -413,6 +490,7 @@
     <div class="hero-actions">
       <button onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="cursor:pointer;border:none;font-family:inherit;font-size:0.9rem;font-weight:600;">Explore Services ↓</button>
       <button onclick="window.open('https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20a%20project','_blank')" class="btn-outline" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);background:transparent;font-family:inherit;font-size:0.9rem;font-weight:500;color:#fff;padding:0.875rem 2rem;border-radius:4px;">💬 WhatsApp Me</button>
+      <a href="https://results.eduxellence.org" target="_blank" class="btn-results">📊 Try Results Portal →</a>
     </div>
   </div>
 </section>
@@ -420,11 +498,47 @@
 <!-- TRUST BAR -->
 <div class="trust-bar">
   <div class="trust-item"><div class="trust-dot"></div><strong>6+ Years</strong>&nbsp;Teaching & Research Experience</div>
-  <div class="trust-item"><div class="trust-dot"></div><strong>6 Service Pillars</strong>&nbsp;Under One Roof</div>
+  <div class="trust-item"><div class="trust-dot"></div><strong>7 Service Pillars</strong>&nbsp;Under One Roof</div>
   <div class="trust-item"><div class="trust-dot"></div><strong>SPSS · EViews · Excel · Python · R</strong>&nbsp;Certified Tools</div>
   <div class="trust-item"><div class="trust-dot"></div>Services from&nbsp;<strong>$50</strong></div>
   <div class="trust-item"><div class="trust-dot"></div><strong>48-Hour</strong>&nbsp;Turnaround (Most Packages)</div>
 </div>
+
+<!-- NEW: RESULTS PLATFORM SECTION -->
+<section id="results" class="results-bg">
+  <div class="section-head center">
+    <span class="section-label" style="color:var(--gold);">New Platform</span>
+    <h2 class="section-title">School Management System</h2>
+    <p class="section-sub">A complete solution for schools, universities, and training centres to manage students, classes, scores, and reports.</p>
+  </div>
+  <div class="results-features">
+    <div class="results-feature">
+      <span class="icon">👨‍🎓</span>
+      <h3>Student Management</h3>
+      <p>Add, import, and manage student profiles with ease.</p>
+    </div>
+    <div class="results-feature">
+      <span class="icon">📚</span>
+      <h3>Class & Subject Setup</h3>
+      <p>Create classes, assign subjects, and set up grading templates.</p>
+    </div>
+    <div class="results-feature">
+      <span class="icon">✏️</span>
+      <h3>Score Entry & Auto-Save</h3>
+      <p>Enter scores that auto-save as you type. No save button needed.</p>
+    </div>
+    <div class="results-feature">
+      <span class="icon">📊</span>
+      <h3>Report Generation</h3>
+      <p>Generate broadsheets, result cards, and class summaries instantly.</p>
+    </div>
+  </div>
+  <div class="results-cta">
+    <a href="https://results.eduxellence.org" target="_blank" class="btn-results-big">
+      🚀 Launch Results Portal → 
+    </a>
+  </div>
+</section>
 
 <!-- HOW IT WORKS -->
 <section>
@@ -437,7 +551,7 @@
     <div class="how-card">
       <div class="how-num">1</div>
       <h3>Choose Your Service</h3>
-      <p>Browse our 6 pillars and select the tier that matches your scope and budget.</p>
+      <p>Browse our 7 pillars and select the tier that matches your scope and budget.</p>
     </div>
     <div class="how-card">
       <div class="how-num">2</div>
@@ -922,6 +1036,40 @@
       </div>
     </div>
   </div>
+
+  <!-- PILLAR 7: NEW! Results Platform -->
+  <div class="pillar" style="border: 2px solid var(--gold); border-radius: 8px; padding: 1.5rem; background: var(--gold-light);">
+    <div class="pillar-header" style="border-bottom-color: var(--gold);">
+      <div class="pillar-icon" style="background: var(--gold); color: white;">📊</div>
+      <div>
+        <div class="pillar-title" style="color: var(--gold-dark);">School Management System</div>
+        <div class="pillar-sub">Our new digital platform for schools and training centres</div>
+      </div>
+      <div style="margin-left: auto; background: var(--gold); color: var(--ink); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Live Now</div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card featured">
+        <div class="tier-head" style="background: var(--gold);">
+          <div>
+            <div class="featured-badge" style="background: var(--white); color: var(--ink);">New</div>
+            <div class="tier-label" style="color: var(--white);">Results Management Platform</div>
+          </div>
+          <div class="tier-price" style="color: var(--white);">Free<span style="color: rgba(255,255,255,0.7);"> / start</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Student registration & management</li>
+            <li>Class & subject configuration</li>
+            <li>Score entry with auto-save</li>
+            <li>Report generation (Excel)</li>
+            <li>AI-powered student remarks</li>
+            <li>Real-time analytics dashboard</li>
+          </ul>
+          <a href="https://results.eduxellence.org" target="_blank" class="tier-btn" style="background: var(--gold); color: var(--ink);">Launch Platform →</a>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- PAYMENT -->
@@ -1042,6 +1190,10 @@
       <button class="faq-q" onclick="toggleFaq(this)">Do you work with NGOs and institutions? <span>+</span></button>
       <div class="faq-a">Yes. We work with NGOs, academic institutions, businesses, and government agencies. Formal invoices and MoUs are available. Contact us for customised institutional pricing.</div>
     </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Is the Results Portal free? <span>+</span></button>
+      <div class="faq-a">Yes! The Results Portal at <a href="https://results.eduxellence.org" target="_blank" style="color:var(--gold);">results.eduxellence.org</a> is completely free to use. Sign up and start managing your school today.</div>
+    </div>
   </div>
 </section>
 
@@ -1071,6 +1223,14 @@
           </div>
           <span style="color:var(--gold); font-size:0.85rem;">→</span>
         </a>
+        <a href="https://results.eduxellence.org" target="_blank" class="contact-link" style="border-color: var(--gold); background: var(--gold-light);">
+          <div class="contact-link-icon" style="background: var(--gold); color: white;">📊</div>
+          <div class="contact-link-text">
+            <div class="contact-link-label">Live Platform</div>
+            <div class="contact-link-value" style="color: var(--gold-dark);">results.eduxellence.org</div>
+          </div>
+          <span style="color:var(--gold); font-size:0.85rem;">→</span>
+        </a>
       </div>
       <div class="social-row">
         <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" rel="noopener noreferrer" class="social-btn">📘 Facebook</a>
@@ -1093,6 +1253,7 @@
           <option>Content Writing & Creation</option>
           <option>Digital Marketing</option>
           <option>High-Ticket Sales & Lead Generation</option>
+          <option>School Management System (Results Portal)</option>
         </select>
         <textarea placeholder="Briefly describe your project or what you need help with..." id="cf-msg"></textarea>
         <button class="consult-submit" onclick="submitConsult()">Send Enquiry via WhatsApp →</button>
@@ -1107,7 +1268,8 @@
     Eduxellence <strong>Solutions</strong>
   </p>
   <p>© 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria &nbsp;·&nbsp;
-    <a href="mailto:eduxellencesolutions@gmail.com" style="color:var(--gold); text-decoration:none;">eduxellencesolutions@gmail.com</a>
+    <a href="mailto:eduxellencesolutions@gmail.com" style="color:var(--gold); text-decoration:none;">eduxellencesolutions@gmail.com</a> &nbsp;·&nbsp;
+    <a href="https://results.eduxellence.org" target="_blank" style="color:var(--gold); text-decoration:none;">📊 results.eduxellence.org</a>
   </p>
 </footer>
 
