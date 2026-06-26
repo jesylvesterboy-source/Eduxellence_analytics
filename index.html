@@ -1,439 +1,1146 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Eduxellence — Research-Grade Academic & Statistical Tools</title>
-    <meta name="description" content="Eduxellence provides research-grade statistical analysis, data cleaning, academic assessment, and results management tools for researchers, lecturers, and institutions.">
-    <link rel="icon" type="image/x-icon" href="/Eduxellence.ico">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <style>
-        /* ── RESET ── */
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --ny: #0B1829;
-            --ny2: #112240;
-            --bl: #1E6BFF;
-            --tl: #0FC9A0;
-            --wh: #fff;
-            --of: #F7F9FC;
-            --sl: #64748B;
-            --bd: #E2E8F0;
-            --ok: #16A34A;
-            --er: #DC2626;
-            --wn: #D97706;
-            --tx: #0F172A;
-            --txM: #475569;
-            --gold: #C8960C;
-            --gold-light: #F5E6B8;
-            --gold-dark: #8B6508;
-            --ink: #0D0D0D;
-            --ink-soft: #2A2A2A;
-            --cream: #FDFAF4;
-            --cream-dark: #F4EED8;
-            --muted: #6B6456;
-            --border: rgba(200,150,12,0.2);
-            --shL: 0 12px 40px rgba(0,0,0,.14);
-            --r16: 16px;
-            --r24: 24px;
-        }
-        html { scroll-behavior: smooth; }
-        body {
-            font-family: 'DM Sans', sans-serif;
-            background: var(--cream);
-            color: var(--ink);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-        a { color: var(--bl); text-decoration: none; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Eduxellence Solutions | Research, Data & Digital Services</title>
+<link rel="icon" type="image/x-icon" href="/Eduxellence.ico">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #C8960C;
+    --gold-light: #F5E6B8;
+    --gold-dark: #8B6508;
+    --ink: #0D0D0D;
+    --ink-soft: #2A2A2A;
+    --cream: #FDFAF4;
+    --cream-dark: #F4EED8;
+    --white: #FFFFFF;
+    --muted: #6B6456;
+    --border: rgba(200,150,12,0.2);
+    --card-bg: rgba(255,255,255,0.95);
+    --shadow: 0 4px 32px rgba(13,13,13,0.08);
+  }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 80px; }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
 
-        /* ── NAV ── */
-        nav {
-            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-            background: rgba(253,250,244,0.96);
-            backdrop-filter: blur(12px);
-            border-bottom: 1px solid var(--border);
-            padding: 0 5%;
-            display: flex; align-items: center; justify-content: space-between;
-            height: 68px;
-        }
-        .nav-logo {
-            font-family: 'Playfair Display', serif;
-            font-size: 1.3rem; font-weight: 700;
-            color: var(--ink);
-            letter-spacing: -0.02em;
-        }
-        .nav-logo span { color: var(--gold); }
-        .nav-links { display: flex; gap: 2rem; list-style: none; align-items: center; }
-        .nav-links a {
-            font-size: 0.875rem; font-weight: 500;
-            color: var(--muted); text-decoration: none;
-            transition: color 0.2s;
-        }
-        .nav-links a:hover { color: var(--gold); }
-        .nav-cta {
-            background: var(--gold); color: var(--white);
-            padding: 0.5rem 1.25rem; border-radius: 4px;
-            font-size: 0.875rem; font-weight: 600;
-            text-decoration: none; transition: background 0.2s;
-            white-space: nowrap;
-        }
-        .nav-cta:hover { background: var(--gold-dark); }
-        .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
-        .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    background: rgba(253,250,244,0.96);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    padding: 0 5%;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 68px;
+  }
+  .nav-logo {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; font-weight: 700;
+    color: var(--ink);
+    letter-spacing: -0.02em;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links { display: flex; gap: 2rem; list-style: none; }
+  .nav-links a {
+    font-size: 0.875rem; font-weight: 500;
+    color: var(--muted); text-decoration: none;
+    transition: color 0.2s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    background: var(--gold); color: var(--white);
+    padding: 0.5rem 1.25rem; border-radius: 4px;
+    font-size: 0.875rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+    white-space: nowrap;
+  }
+  .nav-cta:hover { background: var(--gold-dark); }
+  .hamburger { display: none; flex-direction: column; gap: 5px; cursor: pointer; }
+  .hamburger span { width: 24px; height: 2px; background: var(--ink); transition: all 0.3s; }
 
-        /* ── HERO ── */
-        .hero {
-            min-height: 100vh;
-            background: linear-gradient(160deg, #0D0D0D 0%, #1A1508 60%, #2A1F08 100%);
-            display: flex; align-items: center; justify-content: center;
-            text-align: center;
-            padding: 120px 5% 80px;
-            position: relative;
-            overflow: hidden;
-            margin-top: 0;
-        }
-        .hero::before {
-            content: '';
-            position: absolute; inset: 0;
-            background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,150,12,0.12) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .hero-badge {
-            display: inline-block;
-            border: 1px solid rgba(200,150,12,0.5);
-            color: var(--gold); font-size: 0.75rem; font-weight: 600;
-            letter-spacing: 0.12em; text-transform: uppercase;
-            padding: 0.4rem 1rem; border-radius: 2px;
-            margin-bottom: 2rem;
-            position: relative;
-        }
-        .hero h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(2.5rem, 6vw, 4.5rem);
-            font-weight: 700; color: var(--white);
-            line-height: 1.15; margin-bottom: 1.5rem;
-            max-width: 800px;
-            position: relative;
-        }
-        .hero h1 em { color: var(--gold); font-style: normal; }
-        .hero p {
-            font-size: 1.1rem; color: rgba(255,255,255,0.65);
-            max-width: 560px; margin: 0 auto 2.5rem;
-            font-weight: 300;
-            position: relative;
-        }
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    background: linear-gradient(160deg, #0D0D0D 0%, #1A1508 60%, #2A1F08 100%);
+    display: flex; align-items: center; justify-content: center;
+    text-align: center;
+    padding: 120px 5% 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, rgba(200,150,12,0.12) 0%, transparent 70%);
+  }
+  .hero-badge {
+    display: inline-block;
+    border: 1px solid rgba(200,150,12,0.5);
+    color: var(--gold); font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.12em; text-transform: uppercase;
+    padding: 0.4rem 1rem; border-radius: 2px;
+    margin-bottom: 2rem;
+  }
+  .hero h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.5rem, 6vw, 4.5rem);
+    font-weight: 700; color: var(--white);
+    line-height: 1.15; margin-bottom: 1.5rem;
+    max-width: 800px;
+  }
+  .hero h1 em { color: var(--gold); font-style: normal; }
+  .hero p {
+    font-size: 1.1rem; color: rgba(255,255,255,0.65);
+    max-width: 560px; margin: 0 auto 2.5rem;
+    font-weight: 300;
+  }
+  .hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+  .btn-primary {
+    background: var(--gold); color: var(--ink);
+    padding: 0.875rem 2rem; border-radius: 4px;
+    font-size: 0.9rem; font-weight: 600;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-primary:hover { background: #E8A90E; transform: translateY(-1px); }
+  .btn-outline {
+    border: 1px solid rgba(255,255,255,0.3); color: var(--white);
+    padding: 0.875rem 2rem; border-radius: 4px;
+    font-size: 0.9rem; font-weight: 500;
+    text-decoration: none; transition: all 0.2s;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
 
-        /* ── TOOL CARDS ── */
-        .tools-section {
-            padding: 80px 5%;
-            background: var(--cream);
-        }
-        .section-label {
-            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
-            text-transform: uppercase; color: var(--gold);
-            margin-bottom: 0.75rem; display: block;
-        }
-        .section-title {
-            font-family: 'Playfair Display', serif;
-            font-size: clamp(1.8rem, 3.5vw, 2.8rem);
-            font-weight: 700; color: var(--ink);
-            line-height: 1.2; margin-bottom: 1rem;
-        }
-        .section-sub {
-            font-size: 1rem; color: var(--muted);
-            max-width: 560px; font-weight: 300;
-        }
-        .section-head { margin-bottom: 3.5rem; }
-        .center { text-align: center; }
-        .center .section-sub { margin: 0 auto; }
+  /* TRUST BAR */
+  .trust-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--border);
+    padding: 1.5rem 5%;
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 2.5rem;
+  }
+  .trust-item {
+    display: flex; align-items: center; gap: 0.6rem;
+    font-size: 0.875rem; font-weight: 500; color: var(--muted);
+  }
+  .trust-item strong { color: var(--ink); }
+  .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
 
-        .tool-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 1.5rem;
-            max-width: 1100px;
-            margin: 0 auto;
-        }
-        .tool-card {
-            background: var(--wh);
-            border-radius: 12px;
-            box-shadow: var(--shL);
-            padding: 2rem 1.75rem;
-            transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid var(--border);
-            text-align: center;
-        }
-        .tool-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 50px rgba(0,0,0,.12);
-            border-color: var(--gold);
-        }
-        .tool-card .icon {
-            font-size: 2.8rem;
-            margin-bottom: 0.75rem;
-            display: block;
-        }
-        .tool-card h3 {
-            font-family: 'Playfair Display', serif;
-            font-weight: 700;
-            font-size: 1.2rem;
-            color: var(--ink);
-            margin-bottom: 0.2rem;
-        }
-        .tool-card .domain {
-            font-size: 0.7rem;
-            color: var(--sl);
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--of);
-            padding: 0.15rem 0.6rem;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 0.6rem;
-        }
-        .tool-card p {
-            font-size: 0.85rem;
-            color: var(--txM);
-            line-height: 1.6;
-            margin-bottom: 1rem;
-        }
-        .tool-card .btn-tool {
-            display: inline-block;
-            font-family: 'DM Sans', sans-serif;
-            font-weight: 600;
-            font-size: 0.8rem;
-            padding: 0.5rem 1.5rem;
-            border-radius: 6px;
-            background: var(--gold);
-            color: var(--ink);
-            transition: all 0.2s;
-            border: none;
-            cursor: pointer;
-        }
-        .tool-card .btn-tool:hover {
-            background: var(--gold-dark);
-            color: var(--white);
-            transform: translateY(-2px);
-        }
-        .tool-card .btn-tool.teal {
-            background: var(--tl);
-            color: var(--ny);
-        }
-        .tool-card .btn-tool.teal:hover {
-            background: #0BA88A;
-            color: var(--white);
-        }
-        .tool-card .btn-tool.blue {
-            background: var(--bl);
-            color: var(--wh);
-        }
-        .tool-card .btn-tool.blue:hover {
-            background: #1452CC;
-        }
-        .tool-card .feature-tag {
-            font-size: 0.55rem;
-            background: rgba(200,150,12,0.15);
-            color: var(--gold-dark);
-            padding: 0.15rem 0.6rem;
-            border-radius: 10px;
-            display: inline-block;
-            margin-top: 0.2rem;
-            font-weight: 600;
-        }
-        .tool-card .feature-tag.green { background: rgba(15,201,160,0.15); color: #0BA88A; }
-        .tool-card .feature-tag.blue { background: rgba(30,107,255,0.12); color: #1452CC; }
+  /* SECTIONS */
+  section { padding: 90px 5%; }
+  .section-label {
+    font-size: 0.7rem; font-weight: 600; letter-spacing: 0.15em;
+    text-transform: uppercase; color: var(--gold);
+    margin-bottom: 0.75rem; display: block;
+  }
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700; color: var(--ink);
+    line-height: 1.2; margin-bottom: 1rem;
+  }
+  .section-sub {
+    font-size: 1rem; color: var(--muted);
+    max-width: 560px; font-weight: 300;
+  }
+  .section-head { margin-bottom: 3.5rem; }
+  .center { text-align: center; }
+  .center .section-sub { margin: 0 auto; }
 
-        /* ── TRUST BAR ── */
-        .trust-bar {
-            background: var(--white);
-            border-bottom: 1px solid var(--border);
-            padding: 1.5rem 5%;
-            display: flex; justify-content: center; flex-wrap: wrap; gap: 2.5rem;
-        }
-        .trust-item {
-            display: flex; align-items: center; gap: 0.6rem;
-            font-size: 0.875rem; font-weight: 500; color: var(--muted);
-        }
-        .trust-item strong { color: var(--ink); }
-        .trust-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+  /* HOW IT WORKS */
+  .how-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 2rem; max-width: 900px; margin: 0 auto;
+  }
+  .how-card {
+    text-align: center; padding: 2rem 1.5rem;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .how-num {
+    width: 48px; height: 48px; border-radius: 50%;
+    background: var(--gold-light); color: var(--gold-dark);
+    font-family: 'Playfair Display', serif;
+    font-size: 1.25rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 1rem;
+  }
+  .how-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+  .how-card p { font-size: 0.875rem; color: var(--muted); }
 
-        /* ── FOOTER ── */
-        footer {
-            background: #080808; color: rgba(255,255,255,0.4);
-            padding: 2rem 5%; text-align: center;
-            font-size: 0.8rem; border-top: 1px solid rgba(200,150,12,0.15);
-        }
-        footer strong { color: var(--gold); }
-        footer a { color: var(--gold); }
+  /* SERVICES */
+  .services-bg { background: var(--white); }
+  .pillar { margin-bottom: 4rem; }
+  .pillar-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 1.5rem; padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .pillar-icon {
+    width: 44px; height: 44px; border-radius: 6px;
+    background: var(--gold-light); display: flex;
+    align-items: center; justify-content: center;
+    font-size: 1.25rem;
+  }
+  .pillar-title { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; }
+  .pillar-sub { font-size: 0.875rem; color: var(--muted); }
+  .tier-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.25rem;
+  }
+  .tier-card {
+    border: 1px solid var(--border); border-radius: 8px;
+    overflow: hidden; transition: box-shadow 0.2s;
+    background: var(--card-bg);
+  }
+  .tier-card:hover { box-shadow: var(--shadow); }
+  .tier-card.featured {
+    border-color: var(--gold); border-width: 2px;
+  }
+  .tier-head {
+    padding: 1.25rem 1.5rem;
+    background: var(--cream-dark);
+    display: flex; justify-content: space-between; align-items: flex-start;
+  }
+  .tier-card.featured .tier-head { background: var(--gold-light); }
+  .tier-name { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.25rem; }
+  .tier-label { font-size: 1.05rem; font-weight: 600; color: var(--ink); }
+  .tier-price { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 700; color: var(--gold-dark); white-space: nowrap; }
+  .tier-price span { font-size: 0.8rem; font-weight: 400; font-family: 'DM Sans', sans-serif; color: var(--muted); }
+  .tier-body { padding: 1.25rem 1.5rem; }
+  .tier-body ul { list-style: none; margin-bottom: 1.25rem; }
+  .tier-body ul li {
+    font-size: 0.875rem; color: var(--ink-soft);
+    padding: 0.3rem 0;
+    display: flex; align-items: flex-start; gap: 0.6rem;
+  }
+  .tier-body ul li::before { content: '✓'; color: var(--gold); font-weight: 700; flex-shrink: 0; margin-top: 0.05rem; }
+  .tier-btn {
+    display: block; text-align: center;
+    background: var(--ink); color: var(--white);
+    padding: 0.65rem 1rem; border-radius: 4px;
+    font-size: 0.85rem; font-weight: 600;
+    text-decoration: none; transition: background 0.2s;
+  }
+  .tier-card.featured .tier-btn { background: var(--gold); color: var(--ink); }
+  .tier-btn:hover { background: var(--gold); color: var(--ink); }
+  .featured-badge {
+    background: var(--gold); color: var(--ink);
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; padding: 0.2rem 0.5rem; border-radius: 2px;
+    margin-bottom: 0.5rem; display: inline-block;
+  }
 
-        /* ── RESPONSIVE ── */
-        @media (max-width: 768px) {
-            .nav-links { display: none; }
-            .hamburger { display: flex; }
-            .tool-grid { grid-template-columns: 1fr; }
-            .hero h1 { font-size: 2.2rem; }
-            .hero p { font-size: 0.95rem; }
-        }
-    </style>
+  /* PAYMENT */
+  .payment-bg { background: var(--ink); color: var(--white); }
+  .payment-bg .section-title { color: var(--white); }
+  .payment-bg .section-sub { color: rgba(255,255,255,0.55); }
+  .pay-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.25rem; margin-bottom: 2rem;
+  }
+  .pay-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(200,150,12,0.25);
+    border-radius: 8px; padding: 1.5rem;
+    text-align: center;
+  }
+  .pay-icon { font-size: 2rem; margin-bottom: 0.75rem; }
+  .pay-card h3 { font-size: 0.95rem; font-weight: 600; color: var(--white); margin-bottom: 0.4rem; }
+  .pay-card p { font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.5; }
+  .pay-card a { color: var(--gold); font-size: 0.8rem; text-decoration: none; font-weight: 500; }
+  .pay-note {
+    background: rgba(200,150,12,0.1);
+    border: 1px solid rgba(200,150,12,0.3);
+    border-radius: 6px; padding: 1rem 1.5rem;
+    font-size: 0.875rem; color: rgba(255,255,255,0.7);
+    text-align: center;
+  }
+  .pay-note strong { color: var(--gold); }
+
+  /* TESTIMONIALS */
+  .test-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+  .test-card {
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 8px; padding: 1.75rem;
+  }
+  .test-stars { color: var(--gold); font-size: 0.9rem; margin-bottom: 1rem; letter-spacing: 2px; }
+  .test-quote { font-size: 0.9rem; color: var(--ink-soft); font-style: italic; margin-bottom: 1.25rem; line-height: 1.7; }
+  .test-author { display: flex; align-items: center; gap: 0.75rem; }
+  .test-avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    background: var(--gold-light); display: flex; align-items: center;
+    justify-content: center; font-size: 0.75rem; font-weight: 700; color: var(--gold-dark);
+  }
+  .test-name { font-size: 0.875rem; font-weight: 600; }
+  .test-role { font-size: 0.75rem; color: var(--muted); }
+
+  /* FAQ */
+  .faq-bg { background: var(--white); }
+  .faq-list { max-width: 720px; margin: 0 auto; }
+  .faq-item {
+    border-bottom: 1px solid var(--border); overflow: hidden;
+  }
+  .faq-q {
+    width: 100%; text-align: left; background: none; border: none;
+    padding: 1.25rem 0; cursor: pointer;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem; font-weight: 500; color: var(--ink);
+    gap: 1rem;
+  }
+  .faq-q span { font-size: 1.2rem; color: var(--gold); transition: transform 0.3s; flex-shrink: 0; }
+  .faq-a {
+    max-height: 0; overflow: hidden; transition: max-height 0.35s ease;
+    font-size: 0.875rem; color: var(--muted); line-height: 1.7;
+  }
+  .faq-a.open { max-height: 200px; padding-bottom: 1.25rem; }
+  .faq-q.active span { transform: rotate(45deg); }
+
+  /* CONTACT */
+  .contact-bg { background: var(--cream-dark); }
+  .contact-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 4rem; align-items: start; max-width: 900px; margin: 0 auto;
+  }
+  .contact-links { display: flex; flex-direction: column; gap: 1rem; }
+  .contact-link {
+    display: flex; align-items: center; gap: 1rem;
+    padding: 1rem 1.25rem;
+    background: var(--white); border: 1px solid var(--border);
+    border-radius: 6px; text-decoration: none;
+    color: var(--ink); transition: all 0.2s;
+  }
+  .contact-link:hover { border-color: var(--gold); box-shadow: 0 2px 12px rgba(200,150,12,0.15); }
+  .contact-link-icon {
+    width: 40px; height: 40px; border-radius: 6px;
+    background: var(--gold-light); display: flex; align-items: center;
+    justify-content: center; font-size: 1.2rem; flex-shrink: 0;
+  }
+  .contact-link-text { flex: 1; }
+  .contact-link-label { font-size: 0.7rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .contact-link-value { font-size: 0.875rem; font-weight: 500; color: var(--ink); }
+  .social-row { display: flex; gap: 0.75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .social-btn {
+    display: flex; align-items: center; gap: 0.5rem;
+    padding: 0.6rem 1rem; border: 1px solid var(--border);
+    border-radius: 4px; text-decoration: none;
+    font-size: 0.8rem; font-weight: 500; color: var(--muted);
+    background: var(--white); transition: all 0.2s;
+  }
+  .social-btn:hover { border-color: var(--gold); color: var(--gold); }
+  .consult-box {
+    background: var(--ink); border-radius: 10px;
+    padding: 2rem; color: var(--white);
+  }
+  .consult-box h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem; margin-bottom: 0.5rem; color: var(--white);
+  }
+  .consult-box p { font-size: 0.875rem; color: rgba(255,255,255,0.55); margin-bottom: 1.5rem; }
+  .consult-form { display: flex; flex-direction: column; gap: 0.75rem; }
+  .consult-form input, .consult-form select, .consult-form textarea {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    color: var(--white); border-radius: 4px;
+    padding: 0.65rem 0.875rem; font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem; width: 100%;
+  }
+  .consult-form input::placeholder, .consult-form textarea::placeholder { color: rgba(255,255,255,0.3); }
+  .consult-form select option { background: #1a1a1a; color: var(--white); }
+  .consult-form textarea { resize: vertical; min-height: 80px; }
+  .consult-submit {
+    background: var(--gold); color: var(--ink);
+    border: none; padding: 0.75rem; border-radius: 4px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s;
+  }
+  .consult-submit:hover { background: #E8A90E; }
+
+  /* FOOTER */
+  footer {
+    background: #080808; color: rgba(255,255,255,0.4);
+    padding: 2rem 5%; text-align: center;
+    font-size: 0.8rem; border-top: 1px solid rgba(200,150,12,0.15);
+  }
+  footer strong { color: var(--gold); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .nav-links { display: none; }
+    .hamburger { display: flex; }
+    .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
+    .tier-grid { grid-template-columns: 1fr; }
+    .hero-actions { flex-direction: column; align-items: center; }
+  }
+</style>
 </head>
 <body>
 
 <!-- NAV -->
 <nav>
-    <div class="nav-logo">Eduxellence <span>Tools</span></div>
-    <ul class="nav-links">
-        <li><a href="#tools">Tools</a></li>
-        <li><a href="https://analytics.eduxellence.org" target="_blank">Analytics</a></li>
-        <li><a href="https://results.eduxellence.org" target="_blank">Results</a></li>
-        <li><a href="https://stats.eduxellence.org" target="_blank">Stats</a></li>
-        <li><a href="#contact">Contact</a></li>
-    </ul>
-    <a href="https://analytics.eduxellence.org" class="nav-cta">Launch Analytics →</a>
-    <div class="hamburger" onclick="this.classList.toggle('open')">
-        <span></span><span></span><span></span>
-    </div>
+  <div class="nav-logo">Eduxellence <span>Solutions</span></div>
+  <ul class="nav-links">
+    <li><a onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'}); return false;" href="#services">Services</a></li>
+    <li><a href="#payment">Payment</a></li>
+    <li><a href="#faq">FAQ</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+  <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" class="nav-cta">Free Consultation</a>
+  <div class="hamburger" onclick="this.classList.toggle('open')">
+    <span></span><span></span><span></span>
+  </div>
 </nav>
 
 <!-- HERO -->
 <section class="hero">
-    <div style="position:relative;z-index:1;">
-        <div class="hero-badge">Research · Data · Education · Digital</div>
-        <h1>Empowering Research &<br><em>Academic Excellence</em></h1>
-        <p>Professional-grade tools for statistical analysis, data cleaning, academic assessment, and results management — all built for researchers, lecturers, and institutions.</p>
+  <div style="position:relative;z-index:1;">
+    <div class="hero-badge">Research · Data · Education · Digital</div>
+    <h1>Expert Services That <em>Elevate</em> Your Work</h1>
+    <p>From research assistance and statistical analysis to digital marketing and high-ticket sales — professional support tailored to your needs and budget.</p>
+    <div class="hero-actions">
+      <button onclick="document.getElementById('services').scrollIntoView({behavior:'smooth'})" class="btn-primary" style="cursor:pointer;border:none;font-family:inherit;font-size:0.9rem;font-weight:600;">Explore Services ↓</button>
+      <button onclick="window.open('https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20a%20project','_blank')" class="btn-outline" style="cursor:pointer;border:1px solid rgba(255,255,255,0.3);background:transparent;font-family:inherit;font-size:0.9rem;font-weight:500;color:#fff;padding:0.875rem 2rem;border-radius:4px;">💬 WhatsApp Me</button>
     </div>
+  </div>
 </section>
 
 <!-- TRUST BAR -->
 <div class="trust-bar">
-    <div class="trust-item"><div class="trust-dot"></div><strong>4 Powerful Tools</strong>&nbsp;Under One Roof</div>
-    <div class="trust-item"><div class="trust-dot"></div><strong>Research-Grade</strong>&nbsp;Statistical Analysis</div>
-    <div class="trust-item"><div class="trust-dot"></div><strong>Automated</strong>&nbsp;Results Management</div>
-    <div class="trust-item"><div class="trust-dot"></div><strong>Free Tier</strong>&nbsp;Available for Everyone</div>
+  <div class="trust-item"><div class="trust-dot"></div><strong>6+ Years</strong>&nbsp;Teaching & Research Experience</div>
+  <div class="trust-item"><div class="trust-dot"></div><strong>6 Service Pillars</strong>&nbsp;Under One Roof</div>
+  <div class="trust-item"><div class="trust-dot"></div><strong>SPSS · EViews · Excel · Python · R</strong>&nbsp;Certified Tools</div>
+  <div class="trust-item"><div class="trust-dot"></div>Services from&nbsp;<strong>$50</strong></div>
+  <div class="trust-item"><div class="trust-dot"></div><strong>48-Hour</strong>&nbsp;Turnaround (Most Packages)</div>
 </div>
 
-<!-- TOOLS SECTION -->
-<section id="tools" class="tools-section">
-    <div class="section-head center">
-        <span class="section-label">Our Tools</span>
-        <h2 class="section-title">Choose Your Tool</h2>
-        <p class="section-sub">Each tool is purpose-built to solve specific research and academic challenges.</p>
+<!-- HOW IT WORKS -->
+<section>
+  <div class="section-head center">
+    <span class="section-label">The Process</span>
+    <h2 class="section-title">How It Works</h2>
+    <p class="section-sub">Simple, transparent, and stress-free — from inquiry to delivery.</p>
+  </div>
+  <div class="how-grid">
+    <div class="how-card">
+      <div class="how-num">1</div>
+      <h3>Choose Your Service</h3>
+      <p>Browse our 6 pillars and select the tier that matches your scope and budget.</p>
     </div>
-    <div class="tool-grid">
-
-        <!-- Tool 1: Analytics (expert services) -->
-        <div class="tool-card">
-            <span class="icon">📊</span>
-            <h3>Analytics</h3>
-            <div class="domain">analytics.eduxellence.org</div>
-            <p>Expert research, data analysis, and consulting services — from proofreading to full thesis support, statistical analysis, and digital marketing.</p>
-            <span class="feature-tag">Expert Services</span>
-            <span class="feature-tag green">6 Pillars</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://analytics.eduxellence.org" class="btn-tool" target="_blank">Explore Services →</a>
-            </div>
-        </div>
-
-        <!-- Tool 2: Stats (statistical analysis) -->
-        <div class="tool-card">
-            <span class="icon">📈</span>
-            <h3>Stats</h3>
-            <div class="domain">stats.eduxellence.org</div>
-            <p>Run 12+ statistical tests including T-Test, ANOVA, Regression, PCA, Factor Analysis, and ARIMA — with assumption checking and APA citations.</p>
-            <span class="feature-tag blue">12+ Tests</span>
-            <span class="feature-tag">APA Format</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://stats.eduxellence.org" class="btn-tool blue" target="_blank">Run Analysis →</a>
-            </div>
-        </div>
-
-        <!-- Tool 3: Results (academic assessment) -->
-        <div class="tool-card">
-            <span class="icon">🎓</span>
-            <h3>Results</h3>
-            <div class="domain">results.eduxellence.org</div>
-            <p>Cloud-based Academic Assessment &amp; Results Management Platform. Record assessment scores, auto-calculate results, and generate professional reports.</p>
-            <span class="feature-tag green">Coming Soon</span>
-            <span class="feature-tag">Assessment</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://results.eduxellence.org" class="btn-tool teal" target="_blank">Learn More →</a>
-            </div>
-        </div>
-
-        <!-- Tool 4: Clean (data cleaning) -->
-        <div class="tool-card">
-            <span class="icon">🧹</span>
-            <h3>Clean</h3>
-            <div class="domain">clean.eduxellence.org</div>
-            <p>Clean and prepare your dataset for analysis — remove duplicates, handle missing values, and transform data with a user-friendly interface.</p>
-            <span class="feature-tag blue">Data Prep</span>
-            <span class="feature-tag green">Free</span>
-            <div style="margin-top: 1rem;">
-                <a href="https://clean.eduxellence.org" class="btn-tool" target="_blank">Clean Data →</a>
-            </div>
-        </div>
-
+    <div class="how-card">
+      <div class="how-num">2</div>
+      <h3>Reach Out</h3>
+      <p>Contact via WhatsApp or email. We'll clarify scope and confirm your package within 24hrs.</p>
     </div>
+    <div class="how-card">
+      <div class="how-num">3</div>
+      <h3>Make Payment</h3>
+      <p>Pay securely via Payoneer, Raenest, or bank transfer. We begin work upon confirmation.</p>
+    </div>
+    <div class="how-card">
+      <div class="how-num">4</div>
+      <h3>Receive Deliverable</h3>
+      <p>Your completed work is delivered on time. Revisions included in most packages.</p>
+    </div>
+  </div>
 </section>
 
-<!-- CONTACT SECTION -->
-<section id="contact" style="padding: 60px 5%; background: var(--cream-dark);">
-    <div class="section-head center">
-        <span class="section-label">Contact</span>
-        <h2 class="section-title">Get In Touch</h2>
-        <p class="section-sub">Have questions or need custom support? Reach out to us.</p>
+<!-- SERVICES -->
+<section id="services" class="services-bg">
+  <div class="section-head">
+    <span class="section-label">What We Offer</span>
+    <h2 class="section-title">Services & Pricing</h2>
+    <p class="section-sub">Tiered packages so every client — student, researcher, NGO, or business — finds the right fit.</p>
+  </div>
+
+  <!-- PILLAR 1 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">📚</div>
+      <div>
+        <div class="pillar-title">Research & Academic Services</div>
+        <div class="pillar-sub">From undergraduate support to full research consultation</div>
+      </div>
     </div>
-    <div style="max-width: 600px; margin: 0 auto; text-align: center;">
-        <div style="display: flex; gap: 1.5rem; justify-content: center; flex-wrap: wrap;">
-            <a href="mailto:eduxellencesolutions@gmail.com" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--white); border-radius: 8px; border: 1px solid var(--border); color: var(--ink);">
-                ✉️ eduxellencesolutions@gmail.com
-            </a>
-            <a href="https://wa.me/2348135980311" target="_blank" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; background: var(--gold); border-radius: 8px; color: var(--white); font-weight: 600;">
-                💬 WhatsApp
-            </a>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Starter</div>
+            <div class="tier-label">Proofreading & Formatting</div>
+          </div>
+          <div class="tier-price">$50</div>
         </div>
-        <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--muted);">
-            📍 Abuja, Nigeria &nbsp;·&nbsp; Available globally (remote)
-        </p>
-        <div style="margin-top: 1rem; display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-            <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" style="color: var(--muted); font-size: 0.8rem;">📘 Facebook</a>
-            <a href="https://www.linkedin.com/in/jeremiah-sylvester-4aa906414" target="_blank" style="color: var(--muted); font-size: 0.8rem;">🔗 LinkedIn</a>
-            <a href="https://x.com/eduxelsolutions" target="_blank" style="color: var(--muted); font-size: 0.8rem;">𝕏 Twitter/X</a>
+        <div class="tier-body">
+          <ul>
+            <li>Research proofreading (up to 5,000 words)</li>
+            <li>Academic formatting (APA, MLA, Harvard, Chicago)</li>
+            <li>Citation cleanup & reference verification</li>
+            <li>1 revision round</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Research%20Starter%20package%20($50)" target="_blank" class="tier-btn">Get Started →</a>
         </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Most Popular</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">Literature Review & Editing</div>
+          </div>
+          <div class="tier-price">$150</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Literature review (up to 30 sources)</li>
+            <li>Research editing & proofreading</li>
+            <li>Questionnaire / survey design</li>
+            <li>Academic formatting + citation management</li>
+            <li>2 revision rounds</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Research%20Standard%20package%20($150)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Premium</div>
+            <div class="tier-label">Thesis & Dissertation Support</div>
+          </div>
+          <div class="tier-price">$300<span>/chapter</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Chapter-by-chapter thesis support</li>
+            <li>Research proposal writing</li>
+            <li>Methodology guidance & design</li>
+            <li>Data collection planning</li>
+            <li>Unlimited revisions</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Thesis%20Support%20package%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Elite</div>
+            <div class="tier-label">Academic Research Consulting</div>
+          </div>
+          <div class="tier-price">$1,000<span>+</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full proposal-to-defense support</li>
+            <li>Systematic review support</li>
+            <li>Research publication preparation</li>
+            <li>Grant research assistance</li>
+            <li>Dedicated weekly check-ins</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Academic%20Research%20Consulting%20($1000+)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- PILLAR 2 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">📊</div>
+      <div>
+        <div class="pillar-title">Data Analysis & Statistics</div>
+        <div class="pillar-sub">SPSS · EViews · Excel · R · Python</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Basic</div>
+            <div class="tier-label">Data Cleaning & Entry</div>
+          </div>
+          <div class="tier-price">$50</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Data entry & coding</li>
+            <li>Data cleaning & validation</li>
+            <li>Descriptive statistics</li>
+            <li>Excel / SPSS ready datasets</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Data%20Cleaning%20Basic%20($50)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Best Value</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">Statistical Analysis</div>
+          </div>
+          <div class="tier-price">$150</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>T-tests, ANOVA, Correlation</li>
+            <li>Regression analysis</li>
+            <li>Survey data analysis</li>
+            <li>Results interpretation</li>
+            <li>Statistical report writing</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Statistical%20Analysis%20Standard%20($150)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Advanced</div>
+            <div class="tier-label">Econometric & Time Series</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Econometric analysis (EViews)</li>
+            <li>Time series analysis</li>
+            <li>Agricultural data analysis</li>
+            <li>Data visualization & dashboards</li>
+            <li>PowerPoint data presentation</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Econometric%20Analysis%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Elite</div>
+            <div class="tier-label">Statistical Consulting</div>
+          </div>
+          <div class="tier-price">$500<span>+</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full research data analysis</li>
+            <li>Monitoring & Evaluation support</li>
+            <li>Custom dashboard creation</li>
+            <li>NGO / business data reporting</li>
+            <li>Ongoing statistical consulting</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Statistical%20Consulting%20($500+)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 3 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">🎓</div>
+      <div>
+        <div class="pillar-title">Teaching & Tutoring</div>
+        <div class="pillar-sub">6+ years experience across English, Research, SPSS & more</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Single Session</div>
+            <div class="tier-label">1-Hour Tutoring</div>
+          </div>
+          <div class="tier-price">$20<span>/hr</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>English / TEFL tutoring</li>
+            <li>WAEC / NECO preparation</li>
+            <li>Statistics & SPSS basics</li>
+            <li>Academic writing coaching</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20a%20single%20tutoring%20session" target="_blank" class="tier-btn">Book Session →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Most Popular</div>
+            <div class="tier-name">Package</div>
+            <div class="tier-label">5-Session Bundle</div>
+          </div>
+          <div class="tier-price">$100</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>5 one-hour sessions (save 20%)</li>
+            <li>Agric Economics / Research Methods</li>
+            <li>SPSS hands-on training</li>
+            <li>Session notes & study resources</li>
+            <li>Flexible scheduling</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%205-Session%20Tutoring%20Bundle%20($100)" target="_blank" class="tier-btn">Book Bundle →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Workshop</div>
+            <div class="tier-label">Research Training Workshop</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full-day or multi-session workshop</li>
+            <li>SPSS, Research Methodology or Academic Writing</li>
+            <li>Group or 1-on-1 format</li>
+            <li>Certificate of participation</li>
+            <li>Training materials included</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20a%20Research%20Training%20Workshop%20($300)" target="_blank" class="tier-btn">Book Workshop →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 4 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">✍️</div>
+      <div>
+        <div class="pillar-title">Content Writing & Creation</div>
+        <div class="pillar-sub">SEO articles, educational content, e-books & more</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Basic</div>
+            <div class="tier-label">Blog & Social Content</div>
+          </div>
+          <div class="tier-price">$50</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>2 blog posts (800–1,000 words each)</li>
+            <li>Social media content (1 week)</li>
+            <li>Newsletter writing</li>
+            <li>Basic SEO optimisation</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Content%20Basic%20package%20($50)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Best Value</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">SEO Articles & Web Copy</div>
+          </div>
+          <div class="tier-price">$150</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>4 SEO-optimised articles (1,200+ words)</li>
+            <li>Website content (up to 5 pages)</li>
+            <li>Research-based articles</li>
+            <li>Script writing for videos</li>
+            <li>Study guides or course notes</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Content%20Standard%20package%20($150)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Premium</div>
+            <div class="tier-label">E-Book & Long-Form</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>E-book writing (up to 10,000 words)</li>
+            <li>Educational content packages</li>
+            <li>Full content strategy</li>
+            <li>Formatted, publication-ready output</li>
+            <li>2 revision rounds</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20E-Book%20Content%20package%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 5 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">📱</div>
+      <div>
+        <div class="pillar-title">Digital Marketing</div>
+        <div class="pillar-sub">Growth strategy, social media management & copywriting</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Starter</div>
+            <div class="tier-label">Social Media Setup</div>
+          </div>
+          <div class="tier-price">$100</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Facebook / WhatsApp marketing setup</li>
+            <li>Content calendar (1 month)</li>
+            <li>Basic Canva graphic designs (10)</li>
+            <li>Marketing copywriting</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Starter%20($100)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">Most Popular</div>
+            <div class="tier-name">Growth</div>
+            <div class="tier-label">Monthly Management</div>
+          </div>
+          <div class="tier-price">$300<span>/mo</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Full social media management</li>
+            <li>Community management</li>
+            <li>Email marketing campaigns</li>
+            <li>Lead generation strategy</li>
+            <li>Monthly performance report</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Growth%20($300/mo)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Premium</div>
+            <div class="tier-label">Full Growth Strategy</div>
+          </div>
+          <div class="tier-price">$500<span>/mo</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>All Growth package features</li>
+            <li>Paid ads strategy & support</li>
+            <li>Brand content production</li>
+            <li>Funnel copywriting</li>
+            <li>Weekly strategy calls</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Premium%20($500/mo)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PILLAR 6 -->
+  <div class="pillar">
+    <div class="pillar-header">
+      <div class="pillar-icon">💼</div>
+      <div>
+        <div class="pillar-title">High-Ticket Sales & Lead Generation</div>
+        <div class="pillar-sub">Appointment setting, lead qualification & sales support</div>
+      </div>
+    </div>
+    <div class="tier-grid">
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Starter</div>
+            <div class="tier-label">Lead Qualification</div>
+          </div>
+          <div class="tier-price">$300</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Lead research & list building</li>
+            <li>Lead qualification calls</li>
+            <li>CRM data entry & management</li>
+            <li>Weekly leads report</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Lead%20Generation%20Starter%20($300)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card featured">
+        <div class="tier-head">
+          <div>
+            <div class="featured-badge">High Impact</div>
+            <div class="tier-name">Standard</div>
+            <div class="tier-label">Appointment Setting</div>
+          </div>
+          <div class="tier-price">$500</div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>Appointment setting (monthly retainer)</li>
+            <li>Discovery call support</li>
+            <li>Sales funnel support</li>
+            <li>Customer relationship management</li>
+            <li>Performance tracking</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Appointment%20Setting%20Standard%20($500)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+      <div class="tier-card">
+        <div class="tier-head">
+          <div>
+            <div class="tier-name">Elite</div>
+            <div class="tier-label">Full Sales Support</div>
+          </div>
+          <div class="tier-price">$1,500<span>+</span></div>
+        </div>
+        <div class="tier-body">
+          <ul>
+            <li>High-ticket closing support</li>
+            <li>Full sales pipeline management</li>
+            <li>Outreach copywriting & scripts</li>
+            <li>Dedicated sales strategy sessions</li>
+            <li>Coaches, Agencies & SaaS focus</li>
+          </ul>
+          <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Full%20Sales%20Support%20Elite%20($1500+)" target="_blank" class="tier-btn">Get Started →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAYMENT -->
+<section id="payment" class="payment-bg">
+  <div class="section-head center">
+    <span class="section-label">Payments</span>
+    <h2 class="section-title" style="color:#fff">Flexible Payment Options</h2>
+    <p class="section-sub">Pay from anywhere in the world — securely and easily.</p>
+  </div>
+  <div class="pay-grid">
+    <div class="pay-card">
+      <div class="pay-icon">💳</div>
+      <h3>Payoneer</h3>
+      <p>International clients can pay via Payoneer. A unique, secure payment link will be sent to you after confirming your package.</p>
+      <a href="#" onclick="alert('Please contact us via WhatsApp or email to receive your unique Payoneer payment link.'); return false;">Contact us for payment link →</a>
+    </div>
+    <div class="pay-card">
+      <div class="pay-icon">🏦</div>
+      <h3>Raenest (Virtual USD/GBP)</h3>
+      <p>Direct transfer to a virtual account. After we confirm your service, we will provide a secure, one-time payment link or account details.</p>
+      <a href="#" onclick="alert('Please reach out to us directly to request a secure Raenest payment link for your project.'); return false;">Request payment link →</a>
+    </div>
+    <div class="pay-card">
+      <div class="pay-icon">💬</div>
+      <h3>WhatsApp to Confirm</h3>
+      <p>Message us first — we'll send you exact account details for your preferred payment method.</p>
+      <a href="https://wa.me/2348135980311?text=I'd%20like%20payment%20details%20for%20a%20service" target="_blank">Chat Now →</a>
+    </div>
+    <div class="pay-card">
+      <div class="pay-icon">📧</div>
+      <h3>Email Invoice</h3>
+      <p>Request a formal invoice via email for institutional or NGO payments.</p>
+      <a href="mailto:eduxellencesolutions@gmail.com">Request Invoice →</a>
+    </div>
+  </div>
+  <div class="pay-note">
+    <strong>💡 How to pay:</strong> Reach out on WhatsApp or email first → confirm your service package → we will email you a <strong>unique, secure payment link</strong> (not a permanent one) → click the link to pay via card or bank transfer → work begins within 24 hours of payment confirmation. A 50% deposit is required for packages above $200.
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section>
+  <div class="section-head center">
+    <span class="section-label">Social Proof</span>
+    <h2 class="section-title">What Clients Say</h2>
+    <p class="section-sub">Real results for real people — students, researchers, and businesses.</p>
+  </div>
+  <div class="test-grid">
+    <!-- Testimonial 1: Tyler A -->
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-quote">"Thank you Eduxellence for your quick work. I really appreciate your professionalism, speed, and attention to detail."</p>
+      <div class="test-author">
+        <div class="test-avatar">TA</div>
+        <div>
+          <div class="test-name">Tyler A.</div>
+          <div class="test-role">Satisfied Client</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Testimonial 2: Alex Trufia -->
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-quote">"Eduxellence delivered exceptional work — rigorous, well-structured, and thoroughly researched. Communication was excellent throughout, and the final manuscript exceeded my expectations in clarity, depth, and originality. I'm very satisfied with the collaboration and would gladly work with Eduxellence again in the future."</p>
+      <div class="test-author">
+        <div class="test-avatar">AT</div>
+        <div>
+          <div class="test-name">Alex Trufia</div>
+          <div class="test-role">5/5 Rating</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Testimonial 3: Jason Yao -->
+    <div class="test-card">
+      <div class="test-stars">★★★★★</div>
+      <p class="test-quote">"Eduxellence delivered on what I asked for and was able to identify my need. I would recommend Eduxellence for your project needs."</p>
+      <div class="test-author">
+        <div class="test-avatar">JY</div>
+        <div>
+          <div class="test-name">Jason Yao</div>
+          <div class="test-role">5/5 Rating</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section id="faq" class="faq-bg">
+  <div class="section-head center">
+    <span class="section-label">Questions</span>
+    <h2 class="section-title">Frequently Asked</h2>
+  </div>
+  <div class="faq-list">
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">How do I get started? <span>+</span></button>
+      <div class="faq-a">Simply reach out via WhatsApp (+234 813 598 0311) or email (eduxellencesolutions@gmail.com), describe your project, and we'll recommend the right package and confirm next steps within 24 hours.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Do you offer revisions? <span>+</span></button>
+      <div class="faq-a">Yes. Every package includes at least one revision round. Standard and Premium packages include 2 rounds, and Elite packages come with unlimited revisions to ensure you are completely satisfied.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">How long does delivery take? <span>+</span></button>
+      <div class="faq-a">Most basic packages are delivered within 48 hours. Standard packages take 3–5 business days. Premium and Elite packages are scoped on a project-by-project basis. Rush delivery is available on request for an additional fee.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Is my work kept confidential? <span>+</span></button>
+      <div class="faq-a">Absolutely. All client work is strictly confidential. We do not share, publish, or repurpose your documents in any way. A Non-Disclosure Agreement (NDA) is available on request for sensitive projects.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Can I pay in Nigerian Naira? <span>+</span></button>
+      <div class="faq-a">Yes! Local clients can pay via bank transfer in NGN at the current exchange rate. International clients are recommended to use Payoneer or Raenest. Message us on WhatsApp for account details.</div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Do you work with NGOs and institutions? <span>+</span></button>
+      <div class="faq-a">Yes. We work with NGOs, academic institutions, businesses, and government agencies. Formal invoices and MoUs are available. Contact us for customised institutional pricing.</div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="contact-bg">
+  <div class="section-head center">
+    <span class="section-label">Get In Touch</span>
+    <h2 class="section-title">Let's Work Together</h2>
+    <p class="section-sub">Reach out directly or book a free consultation to get started today.</p>
+  </div>
+  <div class="contact-grid">
+    <div>
+      <div class="contact-links">
+        <a href="https://wa.me/2348135980311?text=Hello%2C%20I'd%20like%20to%20discuss%20a%20project" target="_blank" class="contact-link">
+          <div class="contact-link-icon">💬</div>
+          <div class="contact-link-text">
+            <div class="contact-link-label">WhatsApp</div>
+            <div class="contact-link-value">+234 813 598 0311</div>
+          </div>
+          <span style="color:var(--gold); font-size:0.85rem;">→</span>
+        </a>
+        <a href="mailto:eduxellencesolutions@gmail.com" class="contact-link">
+          <div class="contact-link-icon">✉️</div>
+          <div class="contact-link-text">
+            <div class="contact-link-label">Email</div>
+            <div class="contact-link-value">eduxellencesolutions@gmail.com</div>
+          </div>
+          <span style="color:var(--gold); font-size:0.85rem;">→</span>
+        </a>
+      </div>
+      <div class="social-row">
+        <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" rel="noopener noreferrer" class="social-btn">📘 Facebook</a>
+        <a href="https://www.linkedin.com/in/jeremiah-sylvester-4aa906414" target="_blank" rel="noopener noreferrer" class="social-btn">🔗 LinkedIn</a>
+        <a href="https://x.com/eduxelsolutions" target="_blank" rel="noopener noreferrer" class="social-btn">𝕏 Twitter/X</a>
+      </div>
+      <p style="font-size:0.78rem; color:var(--muted); margin-top:1rem;">📍 Abuja, Nigeria &nbsp;·&nbsp; Available globally (remote)</p>
+    </div>
+    <div class="consult-box">
+      <h3>Book a Free Consultation</h3>
+      <p>Tell us about your project and we'll get back to you within 24 hours.</p>
+      <div class="consult-form">
+        <input type="text" placeholder="Your full name" id="cf-name">
+        <input type="email" placeholder="Your email address" id="cf-email">
+        <select id="cf-service">
+          <option value="" disabled selected>Select a service pillar</option>
+          <option>Research & Academic Services</option>
+          <option>Data Analysis & Statistics</option>
+          <option>Teaching & Tutoring</option>
+          <option>Content Writing & Creation</option>
+          <option>Digital Marketing</option>
+          <option>High-Ticket Sales & Lead Generation</option>
+        </select>
+        <textarea placeholder="Briefly describe your project or what you need help with..." id="cf-msg"></textarea>
+        <button class="consult-submit" onclick="submitConsult()">Send Enquiry via WhatsApp →</button>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- FOOTER -->
 <footer>
-    <p style="margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1rem; color:rgba(255,255,255,0.7);">
-        Eduxellence <strong>Tools</strong>
-    </p>
-    <p>© 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria</p>
-    <p style="margin-top: 0.3rem;">
-        <a href="https://analytics.eduxellence.org">Analytics</a> &middot;
-        <a href="https://stats.eduxellence.org">Stats</a> &middot;
-        <a href="https://results.eduxellence.org">Results</a> &middot;
-        <a href="https://clean.eduxellence.org">Clean</a>
-    </p>
+  <p style="margin-bottom:0.5rem; font-family:'Playfair Display',serif; font-size:1rem; color:rgba(255,255,255,0.7);">
+    Eduxellence <strong>Solutions</strong>
+  </p>
+  <p>© 2025 Eduxellence Solutions. All rights reserved. &nbsp;·&nbsp; Abuja, Nigeria &nbsp;·&nbsp;
+    <a href="mailto:eduxellencesolutions@gmail.com" style="color:var(--gold); text-decoration:none;">eduxellencesolutions@gmail.com</a>
+  </p>
 </footer>
 
 <script>
-    // Mobile hamburger menu
-    document.querySelector('.hamburger')?.addEventListener('click', function() {
-        const nav = document.querySelector('.nav-links');
-        if (nav) {
-            nav.style.display = nav.style.display === 'flex' ? 'none' : 'flex';
-            nav.style.flexDirection = 'column';
-            nav.style.position = 'absolute';
-            nav.style.top = '68px';
-            nav.style.left = '0';
-            nav.style.right = '0';
-            nav.style.background = 'rgba(253,250,244,0.98)';
-            nav.style.padding = '1rem 2rem';
-            nav.style.borderBottom = '1px solid var(--border)';
-            nav.style.gap = '1rem';
-        }
-    });
+function toggleFaq(btn) {
+  const answer = btn.nextElementSibling;
+  const isOpen = answer.classList.contains('open');
+  document.querySelectorAll('.faq-a').forEach(a => a.classList.remove('open'));
+  document.querySelectorAll('.faq-q').forEach(b => b.classList.remove('active'));
+  if (!isOpen) {
+    answer.classList.add('open');
+    btn.classList.add('active');
+  }
+}
+
+function submitConsult() {
+  const name = document.getElementById('cf-name').value.trim();
+  const email = document.getElementById('cf-email').value.trim();
+  const service = document.getElementById('cf-service').value;
+  const msg = document.getElementById('cf-msg').value.trim();
+  if (!name || !service) {
+    alert('Please enter your name and select a service.');
+    return;
+  }
+  const text = `Hello! I'd like to book a free consultation.
+
+Name: ${name}
+Email: ${email || 'Not provided'}
+Service Interested In: ${service}
+Message: ${msg || 'No additional message.'}`;
+  const encoded = encodeURIComponent(text);
+  window.open(`https://wa.me/2348135980311?text=${encoded}`, '_blank');
+}
 </script>
 </body>
 </html>
