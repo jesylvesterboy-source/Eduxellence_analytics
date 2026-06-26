@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "routes": [
+    { "src": "/", "dest": "/index.html" },
+    { "src": "/services", "dest": "/services.html" },
+    { "src": "/free-tools", "dest": "/free-tools.html" },
+    { "src": "/(.*)", "dest": "/$1" }
+  ]
+}
