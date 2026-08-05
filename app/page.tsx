@@ -73,6 +73,8 @@ export default function Home() {
           </li>
           <li><a href="#tools">Tools</a></li>
           <li><a href="#contact">Contact</a></li>
+          <li><a href="/login">Log In</a></li>
+          <li><a href="/signup" style={{ color: "var(--gold)", fontWeight: 600 }}>Sign Up</a></li>
           <li><a href="https://clean.eduxellence.org" target="_blank" rel="noopener noreferrer">Clean</a></li>
           <li><a href="https://stats.eduxellence.org" target="_blank" rel="noopener noreferrer">Stats</a></li>
           <li><a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", fontWeight: 600 }}>Results</a></li>

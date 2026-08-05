@@ -18,6 +18,8 @@ export default function ServicesPage() {
           <li><Link href="/services" style={{ color: "var(--gold)" }}>Services</Link></li>
           <li><Link href="/free-tools">Free Tools</Link></li>
           <li><Link href="/#contact">Contact</Link></li>
+          <li><Link href="/login">Log In</Link></li>
+          <li><Link href="/signup" style={{ color: "var(--gold)", fontWeight: 600 }}>Sign Up</Link></li>
         </ul>
         <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="nav-cta">Free Consultation</a>
         <div className={"hamburger" + (menuOpen ? " open" : "")} onClick={() => setMenuOpen((p) => !p)}>
