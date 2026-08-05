@@ -1,123 +1,48 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
+import Link from "next/link";
 
-export default function Home() {
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const navRef = useRef<HTMLElement>(null);
-
-  const nameRef = useRef<HTMLInputElement>(null);
-  const emailRef = useRef<HTMLInputElement>(null);
-  const serviceRef = useRef<HTMLSelectElement>(null);
-  const msgRef = useRef<HTMLTextAreaElement>(null);
-
-  useEffect(() => {
-    function handleOutsideClick(e: MouseEvent) {
-      if (
-        navRef.current &&
-        !navRef.current.contains(e.target as Node) &&
-        window.innerWidth <= 768
-      ) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("click", handleOutsideClick);
-    return () => document.removeEventListener("click", handleOutsideClick);
-  }, []);
-
-  function toggleDropdown(e: React.MouseEvent) {
-    e.preventDefault();
-    if (window.innerWidth <= 768) {
-      setDropdownOpen((prev) => !prev);
-    }
-  }
-
-  function submitConsult() {
-    const name = nameRef.current?.value.trim() || "";
-    const email = emailRef.current?.value.trim() || "";
-    const service = serviceRef.current?.value || "";
-    const msg = msgRef.current?.value.trim() || "";
-
-    if (!name || !service) {
-      alert("Please enter your name and select a service.");
-      return;
-    }
-
-    const text = "Hello! I need analytics support.\n\nName: " + name +
-      "\nEmail: " + (email || "Not provided") +
-      "\nService Needed: " + service +
-      "\nMessage: " + (msg || "No additional message.");
-    const encoded = encodeURIComponent(text);
-    window.open("https://wa.me/2348135980311?text=" + encoded, "_blank");
-  }
+export default function ServicesPage() {
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <>
       {/* NAV */}
-      <nav ref={navRef}>
+      <nav>
         <div className="nav-logo">
           Eduxellence <span>Solutions</span>
         </div>
         <ul className="nav-links">
-          <li className={"dropdown" + (dropdownOpen ? " open" : "")}>
-            <a href="#" className="drop-trigger" onClick={toggleDropdown}>Services v</a>
-            <div className="dropdown-content">
-              <a href="#research">Research &amp; Academic</a>
-              <a href="#data">Data Analysis &amp; Statistics</a>
-              <a href="#teaching">Teaching &amp; Tutoring</a>
-              <a href="#content">Content Writing</a>
-              <a href="#marketing">Digital Marketing</a>
-              <a href="#sales">High-Ticket Sales</a>
-              <a href="#results">School Management</a>
-            </div>
-          </li>
-          <li><a href="#tools">Tools</a></li>
-          <li><a href="#contact">Contact</a></li>
-          <li><a href="https://clean.eduxellence.org" target="_blank" rel="noopener noreferrer">Clean</a></li>
-          <li><a href="https://stats.eduxellence.org" target="_blank" rel="noopener noreferrer">Stats</a></li>
-          <li><a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold)", fontWeight: 600 }}>Results</a></li>
+          <li><Link href="/">Home</Link></li>
+          <li><Link href="/services" style={{ color: "var(--gold)" }}>Services</Link></li>
+          <li><Link href="/free-tools">Free Tools</Link></li>
+          <li><Link href="/#contact">Contact</Link></li>
         </ul>
         <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="nav-cta">Free Consultation</a>
-        <div
-          className={"hamburger" + (dropdownOpen ? " open" : "")}
-          onClick={() => setDropdownOpen((prev) => !prev)}
-        >
+        <div className={"hamburger" + (menuOpen ? " open" : "")} onClick={() => setMenuOpen((p) => !p)}>
           <span></span>
           <span></span>
           <span></span>
         </div>
       </nav>
 
-      {/* HERO */}
-      <section className="hero">
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div className="hero-badge">Advanced Analytics</div>
-          <h1>
-            Data-Driven Insights for <em>Better Decisions</em>
-          </h1>
-          <p>
-            Transform your data into actionable insights with our comprehensive analytics
-            services, from descriptive statistics to predictive modeling.
-          </p>
-          <div className="hero-actions">
-            <a href="#research" className="btn-primary">Explore Services</a>
-            <a href="https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20data%20analytics" target="_blank" rel="noopener noreferrer" className="btn-outline">Get Started</a>
-          </div>
-        </div>
-      </section>
+      {/* PAGE HEADER */}
+      <div className="page-hero">
+        <h1>Services &amp; <em>Pricing</em></h1>
+        <p>Tiered packages so every client, student, researcher, NGO, or business, finds the right fit.</p>
+      </div>
 
       {/* SERVICES */}
-      <section id="services" style={{ background: "var(--white)" }}>
+      <section id="services" className="services-bg">
         <div className="section-head center">
           <span className="section-label">What We Offer</span>
-          <h2 className="section-title">Services &amp; Pricing</h2>
-          <p className="section-sub">
-            Tiered packages so every client, student, researcher, NGO, or business, finds the right fit.
-          </p>
+          <h2 className="section-title">Our Service Pillars</h2>
+          <p className="section-sub">Six pillars of expertise, each with flexible tiers to match your scope and budget.</p>
         </div>
 
-        {/* PILLAR 1: Research */}
-        <div id="research" className="pillar">
+        {/* PILLAR 1 */}
+        <div className="pillar">
           <div className="pillar-header">
             <div className="pillar-icon">R</div>
             <div>
@@ -205,8 +130,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* PILLAR 2: Data Analysis */}
-        <div id="data" className="pillar">
+        {/* PILLAR 2 */}
+        <div className="pillar">
           <div className="pillar-header">
             <div className="pillar-icon">D</div>
             <div>
@@ -294,8 +219,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* PILLAR 3: Teaching */}
-        <div id="teaching" className="pillar">
+        {/* PILLAR 3 */}
+        <div className="pillar">
           <div className="pillar-header">
             <div className="pillar-icon">T</div>
             <div>
@@ -364,8 +289,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* PILLAR 4: Content Writing */}
-        <div id="content" className="pillar">
+        {/* PILLAR 4 */}
+        <div className="pillar">
           <div className="pillar-header">
             <div className="pillar-icon">C</div>
             <div>
@@ -434,8 +359,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* PILLAR 5: Digital Marketing */}
-        <div id="marketing" className="pillar">
+        {/* PILLAR 5 */}
+        <div className="pillar">
           <div className="pillar-header">
             <div className="pillar-icon">M</div>
             <div>
@@ -504,8 +429,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* PILLAR 6: High-Ticket Sales */}
-        <div id="sales" className="pillar">
+        {/* PILLAR 6 */}
+        <div className="pillar">
           <div className="pillar-header">
             <div className="pillar-icon">S</div>
             <div>
@@ -573,125 +498,13 @@ export default function Home() {
             </div>
           </div>
         </div>
-
-        {/* PILLAR 7: Results Platform */}
-        <div id="results" className="pillar" style={{ border: "2px solid var(--gold)", borderRadius: "8px", padding: "1.5rem", background: "var(--gold-light)" }}>
-          <div className="pillar-header" style={{ borderBottomColor: "var(--gold)" }}>
-            <div className="pillar-icon" style={{ background: "var(--gold)", color: "white" }}>R</div>
-            <div>
-              <div className="pillar-title" style={{ color: "var(--gold-dark)" }}>School Management System</div>
-              <div className="pillar-sub">Our digital platform for schools and training centres</div>
-            </div>
-            <div style={{ marginLeft: "auto", background: "var(--gold)", color: "var(--ink)", padding: "0.25rem 0.75rem", borderRadius: "4px", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase" }}>
-              Live Now
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card featured">
-              <div className="tier-head" style={{ background: "var(--gold)" }}>
-                <div>
-                  <div className="featured-badge" style={{ background: "var(--white)", color: "var(--ink)" }}>New</div>
-                  <div className="tier-label" style={{ color: "var(--white)" }}>Results Management Platform</div>
-                </div>
-                <div className="tier-price" style={{ color: "var(--white)" }}>
-                  Free<span style={{ color: "rgba(255,255,255,0.7)" }}> / start</span>
-                </div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Student registration &amp; management</li>
-                  <li>Class &amp; subject configuration</li>
-                  <li>Score entry with auto-save</li>
-                  <li>Report generation (Excel)</li>
-                  <li>AI-powered student remarks</li>
-                  <li>Real-time analytics dashboard</li>
-                </ul>
-                <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" className="tier-btn" style={{ background: "var(--gold)", color: "var(--ink)" }}>Launch Platform</a>
-              </div>
-            </div>
-          </div>
-        </div>
       </section>
 
-      {/* TOOLS */}
-      <section id="tools" style={{ background: "var(--cream)" }}>
-        <div className="section-head center">
-          <span className="section-label">Tools</span>
-          <h2 className="section-title">Software &amp; Platforms</h2>
-          <p className="section-sub">We work with industry-standard tools to deliver accurate and reliable results.</p>
-        </div>
-        <div className="tools-grid">
-          <div className="tool-item">SPSS</div>
-          <div className="tool-item">EViews</div>
-          <div className="tool-item">Excel</div>
-          <div className="tool-item">Python</div>
-          <div className="tool-item">R</div>
-          <div className="tool-item">Power BI</div>
-        </div>
-      </section>
-
-      {/* CONTACT */}
-      <section id="contact" className="contact-bg">
-        <div className="section-head center">
-          <span className="section-label">Get In Touch</span>
-          <h2 className="section-title">Need Analytics Help?</h2>
-          <p className="section-sub">Reach out and let&apos;s discuss your data needs.</p>
-        </div>
-        <div className="contact-grid">
-          <div>
-            <div className="contact-links">
-              <a href="https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20data%20analytics" target="_blank" rel="noopener noreferrer" className="contact-link">
-                <div className="contact-link-icon">W</div>
-                <div className="contact-link-text">
-                  <div className="contact-link-label">WhatsApp</div>
-                  <div className="contact-link-value">+234 813 598 0311</div>
-                </div>
-              </a>
-              <a href="mailto:eduxellencesolutions@gmail.com" className="contact-link">
-                <div className="contact-link-icon">E</div>
-                <div className="contact-link-text">
-                  <div className="contact-link-label">Email</div>
-                  <div className="contact-link-value">eduxellencesolutions@gmail.com</div>
-                </div>
-              </a>
-              <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" className="contact-link" style={{ borderColor: "var(--gold)", background: "var(--gold-light)" }}>
-                <div className="contact-link-icon" style={{ background: "var(--gold)", color: "white" }}>R</div>
-                <div className="contact-link-text">
-                  <div className="contact-link-label">Live Platform</div>
-                  <div className="contact-link-value" style={{ color: "var(--gold-dark)" }}>results.eduxellence.org</div>
-                </div>
-              </a>
-            </div>
-            <div className="social-row">
-              <a href="https://www.facebook.com/share/1CoVcFnsEK/" target="_blank" rel="noopener noreferrer" className="social-btn">Facebook</a>
-              <a href="https://www.linkedin.com/in/jeremiah-sylvester-4aa906414" target="_blank" rel="noopener noreferrer" className="social-btn">LinkedIn</a>
-              <a href="https://x.com/eduxelsolutions" target="_blank" rel="noopener noreferrer" className="social-btn">Twitter/X</a>
-            </div>
-            <p style={{ fontSize: "0.78rem", color: "var(--muted)", marginTop: "1rem" }}>
-              Abuja, Nigeria - Available globally (remote)
-            </p>
-          </div>
-          <div className="consult-box">
-            <h3>Request Analytics Support</h3>
-            <p>Tell us about your data analysis needs and we&apos;ll get back to you within 24 hours.</p>
-            <div className="consult-form">
-              <input type="text" placeholder="Your full name" ref={nameRef} />
-              <input type="email" placeholder="Your email address" ref={emailRef} />
-              <select ref={serviceRef} defaultValue="">
-                <option value="" disabled>Select a service</option>
-                <option>Research &amp; Academic Services</option>
-                <option>Data Analysis &amp; Statistics</option>
-                <option>Teaching &amp; Tutoring</option>
-                <option>Content Writing &amp; Creation</option>
-                <option>Digital Marketing</option>
-                <option>High-Ticket Sales &amp; Lead Generation</option>
-                <option>School Management System (Results Portal)</option>
-              </select>
-              <textarea placeholder="Briefly describe your project or what you need help with..." ref={msgRef}></textarea>
-              <button className="consult-submit" onClick={submitConsult}>Send Enquiry</button>
-            </div>
-          </div>
-        </div>
+      {/* CTA */}
+      <section className="cta-section">
+        <h2>Ready to Get Started?</h2>
+        <p>Book a free consultation and let&apos;s discuss how we can help you achieve your goals.</p>
+        <a href="https://wa.me/2348135980311?text=Hello%2C%20I'd%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="cta-btn">Book Free Consultation</a>
       </section>
 
       {/* FOOTER */}
@@ -701,14 +514,7 @@ export default function Home() {
         </p>
         <p>
           Copyright 2025 Eduxellence Solutions. All rights reserved. - Abuja, Nigeria -{" "}
-          <a href="mailto:eduxellencesolutions@gmail.com">eduxellencesolutions@gmail.com</a> -{" "}
-          <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer">results.eduxellence.org</a>
-        </p>
-        <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-          <a href="https://stats.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>stats</a>{" "}
-          <a href="https://analytics.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>analytics</a>{" "}
-          <a href="https://clean.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>clean</a>{" "}
-          <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>results</a>
+          <a href="mailto:eduxellencesolutions@gmail.com">eduxellencesolutions@gmail.com</a>
         </p>
       </footer>
     </>
