@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../logout-button";
+import BackHomeBar from "../_components/back-home-bar";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -44,6 +45,7 @@ export default async function AdminDashboard() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+        <BackHomeBar backHref="/" backLabel="Back to Home" />
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem" }}>

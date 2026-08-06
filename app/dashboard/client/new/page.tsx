@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import BackHomeBar from "../../_components/back-home-bar";
 
 const CATEGORIES = [
   "Research & Academic Services",
@@ -66,6 +67,7 @@ export default function NewProjectPage() {
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
+        <BackHomeBar backHref="/dashboard/client" backLabel="Back to Dashboard" />
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", marginBottom: "0.5rem" }}>
           Request a New Project
         </h1>

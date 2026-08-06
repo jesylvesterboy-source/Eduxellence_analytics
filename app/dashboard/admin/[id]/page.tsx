@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import BackHomeBar from "../../_components/back-home-bar";
 
 type Message = {
   id: string;
@@ -10,6 +11,7 @@ type Message = {
   content: string | null;
   file_url: string | null;
   file_name: string | null;
+  thread_type: string;
 };
 
 type Expert = { id: string; full_name: string | null; email: string | null };
@@ -21,8 +23,11 @@ export default function AdminProjectDetail() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [project, setProject] = useState<{ title: string; status: string; description: string | null; expert_id: string | null; client_id: string } | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [clientMessages, setClientMessages] = useState<Message[]>([]);
+  const [expertMessages, setExpertMessages] = useState<Message[]>([]);
+  const [activeTab, setActiveTab] = useState<"client_admin" | "admin_expert">("client_admin");
   const [newMessage, setNewMessage] = useState("");
+  const [uploading, setUploading] = useState(false);
   const [experts, setExperts] = useState<Expert[]>([]);
   const [selectedExpert, setSelectedExpert] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
@@ -43,18 +48,17 @@ export default function AdminProjectDetail() {
       .single();
     setProject(proj);
 
-    const { data: msgs } = await supabase
+    const { data: allMsgs } = await supabase
       .from("messages")
-      .select("id, sender_id, content, file_url, file_name")
+      .select("id, sender_id, content, file_url, file_name, thread_type")
       .eq("project_id", projectId)
-      .eq("thread_type", "client_admin")
+      .in("thread_type", ["client_admin", "admin_expert"])
       .order("created_at", { ascending: true });
-    setMessages(msgs || []);
 
-    const { data: expertList } = await supabase
-      .from("profiles")
-      .select("id, full_name, email")
-      .eq("role", "expert");
+    setClientMessages((allMsgs || []).filter((m) => m.thread_type === "client_admin"));
+    setExpertMessages((allMsgs || []).filter((m) => m.thread_type === "admin_expert"));
+
+    const { data: expertList } = await supabase.from("profiles").select("id, full_name, email").eq("role", "expert");
     setExperts(expertList || []);
   }, [projectId, supabase]);
 
@@ -67,9 +71,11 @@ export default function AdminProjectDetail() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages", filter: `project_id=eq.${projectId}` },
         (payload) => {
-          const m = payload.new as Message & { thread_type: string };
+          const m = payload.new as Message;
           if (m.thread_type === "client_admin") {
-            setMessages((prev) => [...prev, m]);
+            setClientMessages((prev) => [...prev, m]);
+          } else if (m.thread_type === "admin_expert") {
+            setExpertMessages((prev) => [...prev, m]);
           }
         }
       )
@@ -80,9 +86,11 @@ export default function AdminProjectDetail() {
     };
   }, [projectId, loadData, supabase]);
 
+  const activeMessages = activeTab === "client_admin" ? clientMessages : expertMessages;
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [activeMessages]);
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault();
@@ -91,10 +99,49 @@ export default function AdminProjectDetail() {
     setNewMessage("");
     await supabase.from("messages").insert({
       project_id: projectId,
-      thread_type: "client_admin",
+      thread_type: activeTab,
       sender_id: userId,
       content,
     });
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !userId) return;
+
+    setUploading(true);
+    const filePath = `${projectId}/${Date.now()}-${file.name}`;
+
+    const { error: uploadError } = await supabase.storage.from("project-files").upload(filePath, file);
+    if (uploadError) {
+      alert("Upload failed: " + uploadError.message);
+      setUploading(false);
+      return;
+    }
+
+    const { data: urlData } = await supabase.storage
+      .from("project-files")
+      .createSignedUrl(filePath, 60 * 60 * 24 * 365);
+
+    await supabase.from("messages").insert({
+      project_id: projectId,
+      thread_type: activeTab,
+      sender_id: userId,
+      content: null,
+      file_url: urlData?.signedUrl || filePath,
+      file_name: file.name,
+    });
+
+    await supabase.from("project_files").insert({
+      project_id: projectId,
+      uploaded_by: userId,
+      file_url: filePath,
+      file_name: file.name,
+      file_type: file.type,
+    });
+
+    setUploading(false);
+    e.target.value = "";
   }
 
   async function sendQuotation() {
@@ -135,110 +182,161 @@ export default function AdminProjectDetail() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
-      <div style={{ maxWidth: "900px", margin: "0 auto", display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem" }}>
-        <div>
-          <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.5rem", marginBottom: "0.25rem" }}>
-            {project.title}
-          </h1>
-          <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
-            Status: <strong style={{ textTransform: "capitalize" }}>{project.status.replace("_", " ")}</strong>
-          </p>
+      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
+        <BackHomeBar backHref="/dashboard/admin" backLabel="Back to All Projects" />
 
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
-            <div style={{ padding: "1rem 1.5rem", borderBottom: "1px solid var(--border)", fontWeight: 600 }}>
-              Chat with Client
-            </div>
-            <div style={{ padding: "1.5rem", maxHeight: "380px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-              {messages.length === 0 && (
-                <p style={{ color: "var(--muted)", fontSize: "0.85rem", textAlign: "center" }}>No messages yet.</p>
-              )}
-              {messages.map((m) => {
-                const isMine = m.sender_id === userId;
-                return (
-                  <div key={m.id} style={{ alignSelf: isMine ? "flex-end" : "flex-start", maxWidth: "75%" }}>
-                    <div style={{ background: isMine ? "var(--gold)" : "var(--cream-dark)", padding: "0.6rem 0.9rem", borderRadius: "10px", fontSize: "0.9rem" }}>
-                      {m.content && <p>{m.content}</p>}
-                      {m.file_url && (
-                        <a href={m.file_url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, textDecoration: "underline" }}>
-                          File: {m.file_name}
-                        </a>
-                      )}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: "1.5rem" }}>
+          <div>
+            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.5rem", marginBottom: "0.25rem" }}>
+              {project.title}
+            </h1>
+            <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+              Status: <strong style={{ textTransform: "capitalize" }}>{project.status.replace("_", " ")}</strong>
+            </p>
+
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
+              <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
+                <button
+                  onClick={() => setActiveTab("client_admin")}
+                  style={{
+                    flex: 1,
+                    padding: "0.9rem",
+                    border: "none",
+                    background: activeTab === "client_admin" ? "var(--white)" : "var(--cream-dark)",
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    cursor: "pointer",
+                    borderBottom: activeTab === "client_admin" ? "2px solid var(--gold)" : "none",
+                  }}
+                >
+                  Chat with Client
+                </button>
+                <button
+                  onClick={() => setActiveTab("admin_expert")}
+                  disabled={!project.expert_id}
+                  style={{
+                    flex: 1,
+                    padding: "0.9rem",
+                    border: "none",
+                    background: activeTab === "admin_expert" ? "var(--white)" : "var(--cream-dark)",
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    cursor: project.expert_id ? "pointer" : "not-allowed",
+                    opacity: project.expert_id ? 1 : 0.5,
+                    borderBottom: activeTab === "admin_expert" ? "2px solid var(--gold)" : "none",
+                  }}
+                >
+                  Chat with Expert {!project.expert_id && "(none assigned)"}
+                </button>
+              </div>
+
+              <div style={{ padding: "1.5rem", maxHeight: "380px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {activeMessages.length === 0 && (
+                  <p style={{ color: "var(--muted)", fontSize: "0.85rem", textAlign: "center" }}>No messages yet.</p>
+                )}
+                {activeMessages.map((m) => {
+                  const isMine = m.sender_id === userId;
+                  return (
+                    <div key={m.id} style={{ alignSelf: isMine ? "flex-end" : "flex-start", maxWidth: "75%" }}>
+                      <div style={{ background: isMine ? "var(--gold)" : "var(--cream-dark)", padding: "0.6rem 0.9rem", borderRadius: "10px", fontSize: "0.9rem" }}>
+                        {m.content && <p>{m.content}</p>}
+                        {m.file_url && (
+                          <a href={m.file_url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, textDecoration: "underline" }}>
+                            File: {m.file_name}
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
+                  );
+                })}
+                <div ref={messagesEndRef} />
+              </div>
+
+              <form onSubmit={sendMessage} style={{ display: "flex", gap: "0.5rem", padding: "1rem", borderTop: "1px solid var(--border)" }}>
+                <label style={{ cursor: activeTab === "admin_expert" && !project.expert_id ? "not-allowed" : "pointer", display: "flex", alignItems: "center", padding: "0 0.5rem", color: "var(--muted)" }}>
+                  📎
+                  <input
+                    type="file"
+                    onChange={handleFileUpload}
+                    style={{ display: "none" }}
+                    disabled={uploading || (activeTab === "admin_expert" && !project.expert_id)}
+                  />
+                </label>
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder={uploading ? "Uploading file..." : activeTab === "client_admin" ? "Reply to client..." : "Message the expert..."}
+                  disabled={uploading || (activeTab === "admin_expert" && !project.expert_id)}
+                  style={{ flex: 1, padding: "0.6rem 0.9rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.9rem" }}
+                />
+                <button
+                  type="submit"
+                  disabled={uploading || (activeTab === "admin_expert" && !project.expert_id)}
+                  style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.6rem 1.25rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}
+                >
+                  Send
+                </button>
+              </form>
             </div>
-            <form onSubmit={sendMessage} style={{ display: "flex", gap: "0.5rem", padding: "1rem", borderTop: "1px solid var(--border)" }}>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Send Quotation</div>
               <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Reply to client..."
-                style={{ flex: 1, padding: "0.6rem 0.9rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.9rem" }}
+                type="number"
+                placeholder="Amount (USD)"
+                value={quoteAmount}
+                onChange={(e) => setQuoteAmount(e.target.value)}
+                style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
               />
-              <button type="submit" style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.6rem 1.25rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}>
-                Send
+              <textarea
+                placeholder="Notes (optional)"
+                value={quoteDesc}
+                onChange={(e) => setQuoteDesc(e.target.value)}
+                rows={2}
+                style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem", resize: "vertical" }}
+              />
+              <button
+                onClick={sendQuotation}
+                style={{ width: "100%", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem" }}
+              >
+                Send Quotation
               </button>
-            </form>
-          </div>
-        </div>
+            </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-            <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Send Quotation</div>
-            <input
-              type="number"
-              placeholder="Amount (USD)"
-              value={quoteAmount}
-              onChange={(e) => setQuoteAmount(e.target.value)}
-              style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
-            />
-            <textarea
-              placeholder="Notes (optional)"
-              value={quoteDesc}
-              onChange={(e) => setQuoteDesc(e.target.value)}
-              rows={2}
-              style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem", resize: "vertical" }}
-            />
-            <button
-              onClick={sendQuotation}
-              style={{ width: "100%", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem" }}
-            >
-              Send Quotation
-            </button>
-          </div>
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Assign Expert</div>
+              <select
+                value={selectedExpert}
+                onChange={(e) => setSelectedExpert(e.target.value)}
+                style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
+              >
+                <option value="">Select an expert...</option>
+                {experts.map((ex) => (
+                  <option key={ex.id} value={ex.id}>{ex.full_name || ex.email}</option>
+                ))}
+              </select>
+              <button
+                onClick={assignExpert}
+                style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem" }}
+              >
+                Assign
+              </button>
+              {project.expert_id && (
+                <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.5rem" }}>
+                  Currently assigned to: {experts.find((e) => e.id === project.expert_id)?.full_name || "Expert"}
+                </p>
+              )}
+            </div>
 
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-            <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Assign Expert</div>
-            <select
-              value={selectedExpert}
-              onChange={(e) => setSelectedExpert(e.target.value)}
-              style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
-            >
-              <option value="">Select an expert...</option>
-              {experts.map((ex) => (
-                <option key={ex.id} value={ex.id}>{ex.full_name || ex.email}</option>
-              ))}
-            </select>
-            <button
-              onClick={assignExpert}
-              style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem" }}
-            >
-              Assign
-            </button>
-            {project.expert_id && (
-              <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.5rem" }}>
-                Currently assigned to: {experts.find((e) => e.id === project.expert_id)?.full_name || "Expert"}
-              </p>
-            )}
-          </div>
-
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-            <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Workflow Actions</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-              <button onClick={markQaReview} style={actionBtnStyle}>Mark: In QA Review</button>
-              <button onClick={markDelivered} style={actionBtnStyle}>Mark: Delivered to Client</button>
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Workflow Actions</div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                <button onClick={markQaReview} style={actionBtnStyle}>Mark: In QA Review</button>
+                <button onClick={markDelivered} style={actionBtnStyle}>Mark: Delivered to Client</button>
+              </div>
             </div>
           </div>
         </div>

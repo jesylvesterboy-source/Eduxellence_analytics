@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../logout-button";
 import BackHomeBar from "../_components/back-home-bar";
 
-export default async function ClientDashboard() {
+export default async function ExpertDashboard() {
   const supabase = await createClient();
 
   const {
@@ -19,26 +19,23 @@ export default async function ClientDashboard() {
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "client") redirect("/dashboard");
+  if (profile?.role !== "expert") redirect("/dashboard");
 
   const { data: projects } = await supabase
     .from("projects")
-    .select("id, title, status, budget, created_at")
-    .eq("client_id", user.id)
+    .select("id, title, status, deadline, created_at")
+    .eq("expert_id", user.id)
     .order("created_at", { ascending: false });
 
   const statusLabels: Record<string, string> = {
-    new: "New Request",
-    in_review: "Under Review",
-    assigned: "Assigned to Expert",
+    assigned: "Newly Assigned",
     in_progress: "In Progress",
-    submitted: "Submitted for QA",
-    qa_review: "Quality Check",
-    delivered: "Delivered — Awaiting Your Review",
+    submitted: "Submitted — Awaiting Admin QA",
+    qa_review: "Admin Reviewing",
+    delivered: "Delivered to Client",
     revision: "Revision Requested",
-    approved: "Approved",
+    approved: "Approved by Client",
     completed: "Completed",
-    cancelled: "Cancelled",
   };
 
   return (
@@ -48,59 +45,42 @@ export default async function ClientDashboard() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem" }}>
-              Welcome, {profile?.full_name || "there"}
+              Welcome, {profile?.full_name || "Expert"}
             </h1>
-            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Your projects with Eduxellence Solutions</p>
+            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Your assigned projects</p>
           </div>
           <LogoutButton />
         </div>
 
-        <Link
-          href="/dashboard/client/new"
-          style={{
-            display: "inline-block",
-            background: "var(--gold)",
-            color: "var(--ink)",
-            padding: "0.75rem 1.5rem",
-            borderRadius: "6px",
-            fontWeight: 600,
-            fontSize: "0.9rem",
-            textDecoration: "none",
-            marginBottom: "2rem",
-          }}
-        >
-          + Request a New Project
-        </Link>
-
         {!projects || projects.length === 0 ? (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
-            No projects yet. Click above to submit your first request.
+            No projects assigned yet. Admin will assign work here when available.
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
             {projects.map((p) => (
               <Link
                 key={p.id}
-                href={`/dashboard/client/${p.id}`}
+                href={`/dashboard/expert/${p.id}`}
                 style={{
                   display: "block",
                   background: "var(--white)",
                   border: "1px solid var(--border)",
                   borderRadius: "10px",
-                  padding: "1.25rem 1.5rem",
+                  padding: "1.1rem 1.5rem",
                   textDecoration: "none",
                   color: "var(--ink)",
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <div>
-                    <div style={{ fontWeight: 600, marginBottom: "0.25rem" }}>{p.title}</div>
+                    <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>{p.title}</div>
                     <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
                       {statusLabels[p.status] || p.status}
-                      {p.budget ? ` · $${p.budget}` : ""}
+                      {p.deadline ? ` · Due ${new Date(p.deadline).toLocaleDateString()}` : ""}
                     </div>
                   </div>
-                  <span style={{ color: "var(--gold)", fontSize: "0.85rem" }}>View →</span>
+                  <span style={{ color: "var(--gold)", fontSize: "0.85rem" }}>Open →</span>
                 </div>
               </Link>
             ))}
