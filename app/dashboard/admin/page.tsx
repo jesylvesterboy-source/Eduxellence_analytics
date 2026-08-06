@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../logout-button";
 import BackHomeBar from "../_components/back-home-bar";
+import NotificationBell from "../_components/notification-bell";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -53,7 +54,10 @@ export default async function AdminDashboard() {
             </h1>
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{profile?.full_name}</p>
           </div>
-          <LogoutButton />
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <NotificationBell />
+            <LogoutButton />
+          </div>
         </div>
 
         {stats && (

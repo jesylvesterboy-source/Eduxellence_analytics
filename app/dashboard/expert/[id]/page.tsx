@@ -19,11 +19,27 @@ export default function ExpertProjectDetail() {
   const supabase = createClient();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [project, setProject] = useState<{ title: string; status: string; description: string | null; deadline: string | null } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const resolveFileLinks = useCallback(
+    async (msgs: Message[]) => {
+      const links: Record<string, string> = {};
+      for (const m of msgs) {
+        if (m.file_url) {
+          const { data } = await supabase.storage.from("project-files").createSignedUrl(m.file_url, 60 * 60);
+          if (data?.signedUrl) links[m.id] = data.signedUrl;
+        }
+      }
+      setFileLinks((prev) => ({ ...prev, ...links }));
+    },
+    [supabase]
+  );
 
   const loadData = useCallback(async () => {
     const {
@@ -31,6 +47,9 @@ export default function ExpertProjectDetail() {
     } = await supabase.auth.getUser();
     if (!user) return;
     setUserId(user.id);
+
+    const { data: myProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    setIsAdmin(myProfile?.role === "admin");
 
     const { data: proj } = await supabase
       .from("projects")
@@ -46,7 +65,8 @@ export default function ExpertProjectDetail() {
       .eq("thread_type", "admin_expert")
       .order("created_at", { ascending: true });
     setMessages(msgs || []);
-  }, [projectId, supabase]);
+    if (msgs) resolveFileLinks(msgs);
+  }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
     loadData();
@@ -60,7 +80,15 @@ export default function ExpertProjectDetail() {
           const m = payload.new as Message & { thread_type: string };
           if (m.thread_type === "admin_expert") {
             setMessages((prev) => [...prev, m]);
+            if (m.file_url) resolveFileLinks([m]);
           }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "messages", filter: `project_id=eq.${projectId}` },
+        (payload) => {
+          setMessages((prev) => prev.filter((m) => m.id !== (payload.old as Message).id));
         }
       )
       .subscribe();
@@ -68,7 +96,7 @@ export default function ExpertProjectDetail() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [projectId, loadData, supabase]);
+  }, [projectId, loadData, resolveFileLinks, supabase]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -101,16 +129,12 @@ export default function ExpertProjectDetail() {
       return;
     }
 
-    const { data: urlData } = await supabase.storage
-      .from("project-files")
-      .createSignedUrl(filePath, 60 * 60 * 24 * 365);
-
     await supabase.from("messages").insert({
       project_id: projectId,
       thread_type: "admin_expert",
       sender_id: userId,
       content: null,
-      file_url: urlData?.signedUrl || filePath,
+      file_url: filePath,
       file_name: file.name,
     });
 
@@ -125,6 +149,17 @@ export default function ExpertProjectDetail() {
 
     setUploading(false);
     e.target.value = "";
+  }
+
+  async function deleteMessage(m: Message) {
+    if (!confirm(m.file_url ? "Delete this file permanently?" : "Delete this message?")) return;
+
+    if (m.file_url) {
+      await supabase.storage.from("project-files").remove([m.file_url]);
+      await supabase.from("project_files").delete().eq("file_url", m.file_url);
+    }
+    await supabase.from("messages").delete().eq("id", m.id);
+    setMessages((prev) => prev.filter((x) => x.id !== m.id));
   }
 
   async function startWork() {
@@ -146,6 +181,7 @@ export default function ExpertProjectDetail() {
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         <BackHomeBar backHref="/dashboard/expert" backLabel="Back to Dashboard" />
+
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", marginBottom: "0.25rem" }}>
           {project.title}
         </h1>
@@ -181,16 +217,25 @@ export default function ExpertProjectDetail() {
             )}
             {messages.map((m) => {
               const isMine = m.sender_id === userId;
+              const canDelete = isMine || isAdmin;
               return (
                 <div key={m.id} style={{ alignSelf: isMine ? "flex-end" : "flex-start", maxWidth: "75%" }}>
                   <div style={{ background: isMine ? "var(--gold)" : "var(--cream-dark)", padding: "0.6rem 0.9rem", borderRadius: "10px", fontSize: "0.9rem" }}>
                     {m.content && <p>{m.content}</p>}
                     {m.file_url && (
-                      <a href={m.file_url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, textDecoration: "underline" }}>
+                      <a href={fileLinks[m.id] || "#"} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, textDecoration: "underline" }}>
                         File: {m.file_name}
                       </a>
                     )}
                   </div>
+                  {canDelete && (
+                    <button
+                      onClick={() => deleteMessage(m)}
+                      style={{ background: "none", border: "none", color: "var(--muted)", fontSize: "0.7rem", cursor: "pointer", marginTop: "0.2rem", padding: 0 }}
+                    >
+                      Delete
+                    </button>
+                  )}
                 </div>
               );
             })}

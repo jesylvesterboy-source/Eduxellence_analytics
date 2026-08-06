@@ -3,6 +3,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../logout-button";
 import BackHomeBar from "../_components/back-home-bar";
+import NotificationBell from "../_components/notification-bell";
 
 export default async function ClientDashboard() {
   const supabase = await createClient();
@@ -52,7 +53,10 @@ export default async function ClientDashboard() {
             </h1>
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Your projects with Eduxellence Solutions</p>
           </div>
-          <LogoutButton />
+          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <NotificationBell />
+            <LogoutButton />
+          </div>
         </div>
 
         <Link
