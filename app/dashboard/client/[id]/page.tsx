@@ -227,6 +227,14 @@ export default function ClientProjectDetail() {
           </div>
         )}
 
+        {quotation && quotation.status === "approved" && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem", textAlign: "center" }}>
+            <a href={`/dashboard/client/${projectId}/payment`} style={{ display: "inline-block", background: "var(--gold)", color: "var(--ink)", padding: "0.75rem 1.5rem", borderRadius: "6px", fontWeight: 600, textDecoration: "none" }}>
+              Proceed to Payment
+            </a>
+          </div>
+        )}
+
         {project.status === "delivered" && (
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Your deliverable is ready for review.</div>

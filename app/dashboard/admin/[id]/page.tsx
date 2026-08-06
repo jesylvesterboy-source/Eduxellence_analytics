@@ -4,6 +4,7 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
+import PaymentPanel from "../_components/payment-panel";
 
 type Message = {
   id: string;
@@ -16,13 +17,22 @@ type Message = {
 
 type Expert = { id: string; full_name: string | null; email: string | null };
 
+type Quotation = {
+  id: string;
+  amount: number;
+  description: string | null;
+  status: string;
+  created_at: string;
+  responded_at: string | null;
+};
+
 export default function AdminProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
   const supabase = createClient();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [project, setProject] = useState<{ title: string; status: string; description: string | null; expert_id: string | null; client_id: string } | null>(null);
+  const [project, setProject] = useState<{ title: string; status: string; description: string | null; budget: number | null; expert_id: string | null; client_id: string } | null>(null);
   const [clientMessages, setClientMessages] = useState<Message[]>([]);
   const [expertMessages, setExpertMessages] = useState<Message[]>([]);
   const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
@@ -33,6 +43,7 @@ export default function AdminProjectDetail() {
   const [selectedExpert, setSelectedExpert] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDesc, setQuoteDesc] = useState("");
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -58,7 +69,7 @@ export default function AdminProjectDetail() {
 
     const { data: proj } = await supabase
       .from("projects")
-      .select("title, status, description, expert_id, client_id")
+      .select("title, status, description, budget, expert_id, client_id")
       .eq("id", projectId)
       .single();
     setProject(proj);
@@ -78,6 +89,13 @@ export default function AdminProjectDetail() {
 
     const { data: expertList } = await supabase.from("profiles").select("id, full_name, email").eq("role", "expert");
     setExperts(expertList || []);
+
+    const { data: quotes } = await supabase
+      .from("quotations")
+      .select("id, amount, description, status, created_at, responded_at")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+    setQuotations(quotes || []);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -105,6 +123,13 @@ export default function AdminProjectDetail() {
           const deletedId = (payload.old as Message).id;
           setClientMessages((prev) => prev.filter((m) => m.id !== deletedId));
           setExpertMessages((prev) => prev.filter((m) => m.id !== deletedId));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "quotations", filter: `project_id=eq.${projectId}` },
+        () => {
+          loadData();
         }
       )
       .subscribe();
@@ -195,7 +220,7 @@ export default function AdminProjectDetail() {
     setProject((prev) => (prev ? { ...prev, status: "in_review" } : prev));
     setQuoteAmount("");
     setQuoteDesc("");
-    alert("Quotation sent to client.");
+    loadData();
   }
 
   async function assignExpert() {
@@ -219,6 +244,13 @@ export default function AdminProjectDetail() {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
 
+  const latestQuotation = quotations[0];
+  const quoteStatusColor: Record<string, string> = {
+    pending: "var(--gold-dark)",
+    approved: "#1e8449",
+    rejected: "#c0392b",
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
@@ -229,9 +261,43 @@ export default function AdminProjectDetail() {
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.5rem", marginBottom: "0.25rem" }}>
               {project.title}
             </h1>
-            <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+            <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1rem" }}>
               Status: <strong style={{ textTransform: "capitalize" }}>{project.status.replace("_", " ")}</strong>
             </p>
+
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Request</div>
+              {project.description && <p style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>{project.description}</p>}
+              <p style={{ fontSize: "0.85rem" }}>
+                <strong>Client&apos;s proposed budget:</strong>{" "}
+                {project.budget ? `$${project.budget}` : "Not specified"}
+              </p>
+            </div>
+
+            {quotations.length > 0 && (
+              <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Quotation History</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+                  {quotations.map((q) => (
+                    <div key={q.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.85rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.5rem" }}>
+                      <div>
+                        <strong>${q.amount}</strong>
+                        {q.description && <span style={{ color: "var(--muted)" }}> — {q.description}</span>}
+                        <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{new Date(q.created_at).toLocaleString()}</div>
+                      </div>
+                      <span style={{ fontWeight: 600, textTransform: "capitalize", color: quoteStatusColor[q.status] || "var(--muted)" }}>
+                        {q.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {latestQuotation?.status === "rejected" && (
+                  <p style={{ fontSize: "0.8rem", color: "#c0392b", marginTop: "0.75rem" }}>
+                    Client declined the latest offer. Send a revised quotation below.
+                  </p>
+                )}
+              </div>
+            )}
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", overflow: "hidden" }}>
               <div style={{ display: "flex", borderBottom: "1px solid var(--border)" }}>
@@ -328,7 +394,9 @@ export default function AdminProjectDetail() {
 
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Send Quotation</div>
+              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>
+                {latestQuotation?.status === "rejected" ? "Send Revised Quotation" : "Send Quotation"}
+              </div>
               <input
                 type="number"
                 placeholder="Amount (USD)"
@@ -375,6 +443,8 @@ export default function AdminProjectDetail() {
                 </p>
               )}
             </div>
+
+            <PaymentPanel projectId={projectId} expertId={project.expert_id} />
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Workflow Actions</div>

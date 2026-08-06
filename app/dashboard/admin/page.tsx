@@ -55,6 +55,20 @@ export default async function AdminDashboard() {
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{profile?.full_name}</p>
           </div>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <Link
+              href="/dashboard/admin/payments"
+              style={{
+                background: "var(--gold)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Payments
+            </Link>
             <NotificationBell />
             <LogoutButton />
           </div>
