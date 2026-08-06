@@ -21,6 +21,13 @@ type Quotation = {
   status: string;
 };
 
+type RevisionRequest = {
+  id: string;
+  notes: string;
+  status: string;
+  created_at: string;
+};
+
 export default function ClientProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
@@ -34,6 +41,9 @@ export default function ClientProjectDetail() {
   const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
+  const [revisionNotes, setRevisionNotes] = useState("");
+  const [showRevisionForm, setShowRevisionForm] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -84,6 +94,13 @@ export default function ClientProjectDetail() {
       .order("created_at", { ascending: true });
     setMessages(msgs || []);
     if (msgs) resolveFileLinks(msgs);
+
+    const { data: revisions } = await supabase
+      .from("revision_requests")
+      .select("id, notes, status, created_at")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false });
+    setRevisionRequests(revisions || []);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -196,6 +213,34 @@ export default function ClientProjectDetail() {
     setProject((prev) => (prev ? { ...prev, status: "approved" } : prev));
   }
 
+  async function requestRevision() {
+    if (!revisionNotes.trim() || !userId) return;
+    await supabase.from("revision_requests").insert({
+      project_id: projectId,
+      requested_by: userId,
+      notes: revisionNotes,
+      status: "open",
+    });
+    await supabase.from("projects").update({ status: "revision" }).eq("id", projectId);
+    setProject((prev) => (prev ? { ...prev, status: "revision" } : prev));
+
+    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+    if (admins && admins.length > 0) {
+      await supabase.from("notifications").insert(
+        admins.map((a) => ({
+          user_id: a.id,
+          title: "Revision Requested",
+          body: `A revision was requested for "${project?.title ?? "a project"}".`,
+          link: `/dashboard/admin/${projectId}`,
+        }))
+      );
+    }
+
+    setRevisionNotes("");
+    setShowRevisionForm(false);
+    loadData();
+  }
+
   if (!project) {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
@@ -238,9 +283,46 @@ export default function ClientProjectDetail() {
         {project.status === "delivered" && (
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Your deliverable is ready for review.</div>
-            <button onClick={approveDelivery} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.5rem 1.25rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}>
-              Approve Completed Work
-            </button>
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button onClick={approveDelivery} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.5rem 1.25rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}>
+                Approve Completed Work
+              </button>
+              <button
+                onClick={() => setShowRevisionForm((v) => !v)}
+                style={{ background: "transparent", border: "1px solid var(--ink)", padding: "0.5rem 1.25rem", borderRadius: "6px", cursor: "pointer" }}
+              >
+                Request Revision
+              </button>
+            </div>
+
+            {showRevisionForm && (
+              <div style={{ marginTop: "0.9rem" }}>
+                <textarea
+                  placeholder="What needs to change?"
+                  value={revisionNotes}
+                  onChange={(e) => setRevisionNotes(e.target.value)}
+                  rows={3}
+                  style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem", resize: "vertical" }}
+                />
+                <button
+                  onClick={requestRevision}
+                  disabled={!revisionNotes.trim()}
+                  style={{ background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem 1.25rem", borderRadius: "6px", fontWeight: 600, cursor: revisionNotes.trim() ? "pointer" : "not-allowed", opacity: revisionNotes.trim() ? 1 : 0.5 }}
+                >
+                  Submit Revision Request
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {project.status === "revision" && revisionRequests.length > 0 && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Revision Requested</div>
+            <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{revisionRequests[0].notes}</p>
+            <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.5rem" }}>
+              Submitted {new Date(revisionRequests[0].created_at).toLocaleString()} — status: {revisionRequests[0].status}
+            </p>
           </div>
         )}
 

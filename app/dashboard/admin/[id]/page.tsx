@@ -26,6 +26,16 @@ type Quotation = {
   responded_at: string | null;
 };
 
+type RevisionRequest = {
+  id: string;
+  notes: string;
+  status: string;
+  created_at: string;
+  sent_to_expert_at: string | null;
+  expert_submitted_at: string | null;
+  resolved_at: string | null;
+};
+
 export default function AdminProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
@@ -44,6 +54,8 @@ export default function AdminProjectDetail() {
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDesc, setQuoteDesc] = useState("");
   const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
+  const [sendingToExpert, setSendingToExpert] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -96,6 +108,13 @@ export default function AdminProjectDetail() {
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     setQuotations(quotes || []);
+
+    const { data: revisions } = await supabase
+      .from("revision_requests")
+      .select("id, notes, status, created_at, sent_to_expert_at, expert_submitted_at, resolved_at")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    setRevisionRequests(revisions || []);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -128,6 +147,13 @@ export default function AdminProjectDetail() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "quotations", filter: `project_id=eq.${projectId}` },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "revision_requests", filter: `project_id=eq.${projectId}` },
         () => {
           loadData();
         }
@@ -238,6 +264,44 @@ export default function AdminProjectDetail() {
   async function markDelivered() {
     await supabase.from("projects").update({ status: "delivered" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, status: "delivered" } : prev));
+
+    const active = revisionRequests.find((r) => r.status === "in_progress");
+    if (active) {
+      await supabase
+        .from("revision_requests")
+        .update({ status: "resolved", resolved_at: new Date().toISOString() })
+        .eq("id", active.id);
+      loadData();
+    }
+  }
+
+  async function sendRevisionToExpert() {
+    const active = revisionRequests.find((r) => r.status === "open");
+    if (!active || !project?.expert_id || !userId) return;
+
+    setSendingToExpert(true);
+
+    await supabase
+      .from("revision_requests")
+      .update({ status: "in_progress", sent_to_expert_at: new Date().toISOString() })
+      .eq("id", active.id);
+
+    await supabase.from("messages").insert({
+      project_id: projectId,
+      thread_type: "admin_expert",
+      sender_id: userId,
+      content: `Revision requested by client:\n\n${active.notes}`,
+    });
+
+    await supabase.from("notifications").insert({
+      user_id: project.expert_id,
+      title: "Revision Assigned",
+      body: `A revision was requested on "${project.title}". Check the project for details.`,
+      link: `/dashboard/expert/${projectId}`,
+    });
+
+    setSendingToExpert(false);
+    loadData();
   }
 
   if (!project) {
@@ -296,6 +360,45 @@ export default function AdminProjectDetail() {
                     Client declined the latest offer. Send a revised quotation below.
                   </p>
                 )}
+              </div>
+            )}
+
+            {revisionRequests.length > 0 && (
+              <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>
+                  Revision History ({revisionRequests.length} round{revisionRequests.length > 1 ? "s" : ""})
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.9rem" }}>
+                  {revisionRequests.map((r, idx) => (
+                    <div key={r.id} style={{ borderBottom: idx < revisionRequests.length - 1 ? "1px solid var(--border)" : "none", paddingBottom: "0.75rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem", marginBottom: "0.3rem" }}>
+                        <strong>Revision {idx + 1}</strong>
+                        <span style={{ textTransform: "capitalize", fontWeight: 600, color: r.status === "resolved" ? "#1e8449" : "var(--gold-dark)" }}>
+                          {r.status.replace("_", " ")}
+                        </span>
+                      </div>
+                      <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>{r.notes}</p>
+                      <div style={{ fontSize: "0.7rem", color: "var(--muted)", lineHeight: 1.6 }}>
+                        Requested {new Date(r.created_at).toLocaleString()}
+                        {r.sent_to_expert_at && <><br />Sent to expert {new Date(r.sent_to_expert_at).toLocaleString()}</>}
+                        {r.expert_submitted_at && <><br />Expert resubmitted {new Date(r.expert_submitted_at).toLocaleString()}</>}
+                        {r.resolved_at && <><br />Resolved {new Date(r.resolved_at).toLocaleString()}</>}
+                      </div>
+                      {r.status === "open" && project.expert_id && (
+                        <button
+                          onClick={sendRevisionToExpert}
+                          disabled={sendingToExpert}
+                          style={{ marginTop: "0.5rem", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.4rem 0.9rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}
+                        >
+                          {sendingToExpert ? "Sending..." : "Send to Expert"}
+                        </button>
+                      )}
+                      {r.status === "open" && !project.expert_id && (
+                        <p style={{ fontSize: "0.7rem", color: "#c0392b", marginTop: "0.4rem" }}>Assign an expert before sending this revision.</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
@@ -444,13 +547,22 @@ export default function AdminProjectDetail() {
               )}
             </div>
 
-            <PaymentPanel projectId={projectId} expertId={project.expert_id} />
+            <PaymentPanel
+              projectId={projectId}
+              expertId={project.expert_id}
+              projectStatus={project.status}
+              onReleased={() => setProject((prev) => (prev ? { ...prev, status: "completed" } : prev))}
+            />
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Workflow Actions</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 <button onClick={markQaReview} style={actionBtnStyle}>Mark: In QA Review</button>
-                <button onClick={markDelivered} style={actionBtnStyle}>Mark: Delivered to Client</button>
+                <button onClick={markDelivered} style={actionBtnStyle}>
+                  {revisionRequests.some((r) => r.status === "in_progress") 
+                    ? "Approve Revision & Send to Client" 
+                    : "Mark: Delivered to Client"}
+                </button>
               </div>
             </div>
           </div>

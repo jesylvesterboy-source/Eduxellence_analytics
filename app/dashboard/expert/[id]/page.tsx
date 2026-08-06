@@ -25,6 +25,7 @@ export default function ExpertProjectDetail() {
   const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [activeRevision, setActiveRevision] = useState<{ id: string; notes: string } | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -66,6 +67,20 @@ export default function ExpertProjectDetail() {
       .order("created_at", { ascending: true });
     setMessages(msgs || []);
     if (msgs) resolveFileLinks(msgs);
+
+    if (proj?.status === "revision") {
+      const { data: rev } = await supabase
+        .from("revision_requests")
+        .select("id, notes")
+        .eq("project_id", projectId)
+        .eq("status", "in_progress")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setActiveRevision(rev);
+    } else {
+      setActiveRevision(null);
+    }
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -168,6 +183,12 @@ export default function ExpertProjectDetail() {
   }
 
   async function submitForQA() {
+    if (activeRevision) {
+      await supabase
+        .from("revision_requests")
+        .update({ expert_submitted_at: new Date().toISOString() })
+        .eq("id", activeRevision.id);
+    }
     await supabase.from("projects").update({ status: "submitted" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, status: "submitted" } : prev));
     alert("Submitted to Admin for quality review.");
@@ -193,6 +214,13 @@ export default function ExpertProjectDetail() {
         {project.description && (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
             <strong>Brief:</strong> {project.description}
+          </div>
+        )}
+
+        {project.status === "revision" && activeRevision && (
+          <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Revision Requested</div>
+            <p style={{ fontSize: "0.9rem" }}>{activeRevision.notes}</p>
           </div>
         )}
 
