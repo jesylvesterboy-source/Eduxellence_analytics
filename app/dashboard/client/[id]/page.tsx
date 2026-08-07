@@ -28,6 +28,12 @@ type RevisionRequest = {
   created_at: string;
 };
 
+type Review = {
+  id: string;
+  rating: number;
+  comment: string | null;
+};
+
 export default function ClientProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
@@ -44,6 +50,10 @@ export default function ClientProjectDetail() {
   const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
   const [revisionNotes, setRevisionNotes] = useState("");
   const [showRevisionForm, setShowRevisionForm] = useState(false);
+  const [review, setReview] = useState<Review | null>(null);
+  const [ratingInput, setRatingInput] = useState(0);
+  const [commentInput, setCommentInput] = useState("");
+  const [submittingReview, setSubmittingReview] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -101,6 +111,13 @@ export default function ClientProjectDetail() {
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     setRevisionRequests(revisions || []);
+
+    const { data: existingReview } = await supabase
+      .from("reviews")
+      .select("id, rating, comment")
+      .eq("project_id", projectId)
+      .maybeSingle();
+    setReview(existingReview);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -241,6 +258,27 @@ export default function ClientProjectDetail() {
     loadData();
   }
 
+  async function submitReview() {
+    if (!userId || ratingInput < 1) return;
+    setSubmittingReview(true);
+    const { data, error } = await supabase
+      .from("reviews")
+      .insert({
+        project_id: projectId,
+        client_id: userId,
+        rating: ratingInput,
+        comment: commentInput.trim() || null,
+      })
+      .select("id, rating, comment")
+      .single();
+    setSubmittingReview(false);
+    if (error) {
+      alert("Could not submit review: " + error.message);
+      return;
+    }
+    setReview(data);
+  }
+
   if (!project) {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
@@ -323,6 +361,60 @@ export default function ClientProjectDetail() {
             <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.5rem" }}>
               Submitted {new Date(revisionRequests[0].created_at).toLocaleString()} — status: {revisionRequests[0].status}
             </p>
+          </div>
+        )}
+
+        {project.status === "completed" && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Project Completed 🎉</div>
+
+            {review ? (
+              <div>
+                <p style={{ fontSize: "0.85rem", marginBottom: "0.25rem" }}>
+                  You rated this project: {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                </p>
+                {review.comment && <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{review.comment}</p>}
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: "0.85rem", marginBottom: "0.6rem" }}>How was your experience with Eduxellence?</p>
+                <div style={{ display: "flex", gap: "0.25rem", marginBottom: "0.6rem", fontSize: "1.5rem" }}>
+                  {[1, 2, 3, 4, 5].map((n) => (
+                    <button
+                      key={n}
+                      type="button"
+                      onClick={() => setRatingInput(n)}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: n <= ratingInput ? "var(--gold)" : "var(--border)", padding: 0, lineHeight: 1 }}
+                      aria-label={`Rate ${n} stars`}
+                    >
+                      ★
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  placeholder="Leave a comment (optional)"
+                  value={commentInput}
+                  onChange={(e) => setCommentInput(e.target.value)}
+                  rows={3}
+                  style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem", resize: "vertical" }}
+                />
+                <button
+                  onClick={submitReview}
+                  disabled={ratingInput < 1 || submittingReview}
+                  style={{
+                    background: ratingInput < 1 ? "var(--border)" : "var(--gold)",
+                    color: "var(--ink)",
+                    border: "none",
+                    padding: "0.5rem 1.25rem",
+                    borderRadius: "6px",
+                    fontWeight: 600,
+                    cursor: ratingInput < 1 ? "not-allowed" : "pointer",
+                  }}
+                >
+                  {submittingReview ? "Submitting..." : "Submit Review"}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
