@@ -3,25 +3,183 @@
 import { useState } from "react";
 import Link from "next/link";
 
-export default function ServicesPage() {
+type Package = {
+  tier: "Starter" | "Standard" | "Premium" | "Enterprise";
+  name: string;
+  price: string;
+};
+
+type Category = {
+  icon: string;
+  title: string;
+  description: string;
+  packages: Package[];
+};
+
+const CATEGORIES: Category[] = [
+  {
+    icon: "R",
+    title: "Research & Academic Services",
+    description: "From undergraduate support to professional research consulting.",
+    packages: [
+      { tier: "Starter", name: "Proofreading & Formatting", price: "Starting from $50" },
+      { tier: "Standard", name: "Literature Review & Research Support", price: "Starting from $150" },
+      { tier: "Premium", name: "Thesis & Dissertation Support", price: "Starting from $300 per chapter" },
+      { tier: "Enterprise", name: "Research Consulting", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "D",
+    title: "Data, AI & Analytics",
+    description: "Professional data analysis, business intelligence and AI solutions.",
+    packages: [
+      { tier: "Starter", name: "Data Cleaning", price: "Starting from $50" },
+      { tier: "Standard", name: "Statistical Analysis", price: "Starting from $150" },
+      { tier: "Premium", name: "Advanced Analytics", price: "Starting from $350" },
+      { tier: "Enterprise", name: "AI & Business Intelligence", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "S",
+    title: "Software & Digital Solutions",
+    description: "Modern software, web and mobile application development.",
+    packages: [
+      { tier: "Starter", name: "Landing Page / Small Website", price: "Starting from $250" },
+      { tier: "Standard", name: "Business Website", price: "Starting from $750" },
+      { tier: "Premium", name: "Custom Web Application", price: "Starting from $2,000" },
+      { tier: "Enterprise", name: "Enterprise Software / SaaS", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "M",
+    title: "Mobile App Development",
+    description: "Android, iOS and cross-platform mobile solutions.",
+    packages: [
+      { tier: "Starter", name: "Simple Mobile App", price: "Starting from $800" },
+      { tier: "Standard", name: "Business Mobile App", price: "Starting from $2,500" },
+      { tier: "Premium", name: "Advanced Mobile Platform", price: "Starting from $5,000" },
+      { tier: "Enterprise", name: "Custom Mobile Ecosystem", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "W",
+    title: "Website Services",
+    description: "Professional websites, portals and e-commerce platforms.",
+    packages: [
+      { tier: "Starter", name: "Website Maintenance", price: "Starting from $100/month" },
+      { tier: "Standard", name: "Corporate Website", price: "Starting from $600" },
+      { tier: "Premium", name: "E-commerce Website", price: "Starting from $1,500" },
+      { tier: "Enterprise", name: "Custom Web Portal", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "B",
+    title: "Business & Consulting",
+    description: "Helping businesses grow through strategy and innovation.",
+    packages: [
+      { tier: "Starter", name: "Business Plan Development", price: "Starting from $200" },
+      { tier: "Standard", name: "Financial Modelling", price: "Starting from $400" },
+      { tier: "Premium", name: "Business Strategy & Advisory", price: "Starting from $800" },
+      { tier: "Enterprise", name: "Corporate Consulting", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "A",
+    title: "Agriculture & Food Systems",
+    description: "Agribusiness, climate-smart agriculture and value chain consulting.",
+    packages: [
+      { tier: "Starter", name: "Agribusiness Advisory", price: "Starting from $150" },
+      { tier: "Standard", name: "Feasibility Study", price: "Starting from $500" },
+      { tier: "Premium", name: "Value Chain Analysis", price: "Starting from $1,000" },
+      { tier: "Enterprise", name: "Agricultural Consulting", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "G",
+    title: "GIS & Engineering",
+    description: "Spatial analysis, mapping and engineering solutions.",
+    packages: [
+      { tier: "Starter", name: "GIS Mapping", price: "Starting from $150" },
+      { tier: "Standard", name: "Spatial Analysis", price: "Starting from $400" },
+      { tier: "Premium", name: "Engineering Design", price: "Starting from $800" },
+      { tier: "Enterprise", name: "Infrastructure Projects", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "H",
+    title: "Health & Medical Research",
+    description: "Research, analytics and public health consulting.",
+    packages: [
+      { tier: "Starter", name: "Medical Editing", price: "Starting from $100" },
+      { tier: "Standard", name: "Public Health Research", price: "Starting from $350" },
+      { tier: "Premium", name: "Clinical Data Analysis", price: "Starting from $750" },
+      { tier: "Enterprise", name: "Health Consulting", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "C",
+    title: "Creative & Digital Media",
+    description: "Branding, design and multimedia production.",
+    packages: [
+      { tier: "Starter", name: "Logo & Brand Assets", price: "Starting from $100" },
+      { tier: "Standard", name: "Brand Identity Package", price: "Starting from $350" },
+      { tier: "Premium", name: "Video & Motion Graphics", price: "Starting from $750" },
+      { tier: "Enterprise", name: "Complete Brand Strategy", price: "Custom Quote" },
+    ],
+  },
+  {
+    icon: "P",
+    title: "Professional Support Services",
+    description: "Business support for professionals and organizations.",
+    packages: [
+      { tier: "Starter", name: "Virtual Assistance", price: "Starting from $15/hour" },
+      { tier: "Standard", name: "Technical Writing", price: "Starting from $150" },
+      { tier: "Premium", name: "Translation & Localization", price: "Starting from $300" },
+      { tier: "Enterprise", name: "Dedicated Business Support", price: "Custom Quote" },
+    ],
+  },
+];
+
+function waLink(category: string, tier: string, name: string) {
+  const text = "Hello, I would like to request a quote for " + name + " (" + tier + ") under " + category + ".";
+  return "https://wa.me/2348135980311?text=" + encodeURIComponent(text);
+}
+
+export default function SolutionsPage() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [activeFilter, setActiveFilter] = useState("All");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
+
+  const filtered = CATEGORIES.filter((c) => {
+    const matchesFilter = activeFilter === "All" || c.title === activeFilter;
+    const matchesSearch =
+      search.trim() === "" ||
+      c.title.toLowerCase().includes(search.toLowerCase()) ||
+      c.description.toLowerCase().includes(search.toLowerCase());
+    return matchesFilter && matchesSearch;
+  });
+
+  function toggleCollapse(title: string) {
+    setCollapsed((prev) => ({ ...prev, [title]: !prev[title] }));
+  }
 
   return (
     <>
-      {/* NAV */}
       <nav>
         <div className="nav-logo">
           Eduxellence <span>Solutions</span>
         </div>
         <ul className="nav-links">
           <li><Link href="/">Home</Link></li>
-          <li><Link href="/services" style={{ color: "var(--gold)" }}>Services</Link></li>
-          <li><Link href="/free-tools">Free Tools</Link></li>
+          <li><Link href="/services" style={{ color: "var(--gold)" }}>Eduxellence Solutions</Link></li>
           <li><Link href="/#contact">Contact</Link></li>
           <li><Link href="/login">Log In</Link></li>
           <li><Link href="/signup" style={{ color: "var(--gold)", fontWeight: 600 }}>Sign Up</Link></li>
         </ul>
-        <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="nav-cta">Free Consultation</a>
+        <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="nav-cta">
+          Free Consultation
+        </a>
         <div className={"hamburger" + (menuOpen ? " open" : "")} onClick={() => setMenuOpen((p) => !p)}>
           <span></span>
           <span></span>
@@ -29,487 +187,96 @@ export default function ServicesPage() {
         </div>
       </nav>
 
-      {/* PAGE HEADER */}
-      <div className="page-hero">
-        <h1>Services &amp; <em>Pricing</em></h1>
-        <p>Tiered packages so every client, student, researcher, NGO, or business, finds the right fit.</p>
+      <div className="sol-hero">
+        <div className="sol-hero-badge">Multidisciplinary Expert Network</div>
+        <h1>Eduxellence Solutions</h1>
+        <p>
+          Comprehensive professional solutions delivered by vetted experts across research, technology,
+          business, agriculture, healthcare, engineering, AI, and digital innovation.
+        </p>
+        <a href="#catalogue" className="sol-hero-cta">Find the Right Solution</a>
       </div>
 
-      {/* SERVICES */}
-      <section id="services" className="services-bg">
-        <div className="section-head center">
-          <span className="section-label">What We Offer</span>
-          <h2 className="section-title">Our Service Pillars</h2>
-          <p className="section-sub">Six pillars of expertise, each with flexible tiers to match your scope and budget.</p>
-        </div>
-
-        {/* PILLAR 1 */}
-        <div className="pillar">
-          <div className="pillar-header">
-            <div className="pillar-icon">R</div>
-            <div>
-              <div className="pillar-title">Research &amp; Academic Services</div>
-              <div className="pillar-sub">From undergraduate support to full research consultation</div>
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Starter</div>
-                  <div className="tier-label">Proofreading &amp; Formatting</div>
-                </div>
-                <div className="tier-price">$50</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Research proofreading (up to 5,000 words)</li>
-                  <li>Academic formatting (APA, MLA, Harvard, Chicago)</li>
-                  <li>Citation cleanup &amp; reference verification</li>
-                  <li>1 revision round</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Research%20Starter%20package%20($50)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card featured">
-              <div className="tier-head">
-                <div>
-                  <div className="featured-badge">Most Popular</div>
-                  <div className="tier-name">Standard</div>
-                  <div className="tier-label">Literature Review &amp; Editing</div>
-                </div>
-                <div className="tier-price">$150</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Literature review (up to 30 sources)</li>
-                  <li>Research editing &amp; proofreading</li>
-                  <li>Questionnaire / survey design</li>
-                  <li>Academic formatting + citation management</li>
-                  <li>2 revision rounds</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Research%20Standard%20package%20($150)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Premium</div>
-                  <div className="tier-label">Thesis &amp; Dissertation Support</div>
-                </div>
-                <div className="tier-price">$300<span>/chapter</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Chapter-by-chapter thesis support</li>
-                  <li>Research proposal writing</li>
-                  <li>Methodology guidance &amp; design</li>
-                  <li>Data collection planning</li>
-                  <li>Unlimited revisions</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Thesis%20Support%20package%20($300)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Elite</div>
-                  <div className="tier-label">Academic Research Consulting</div>
-                </div>
-                <div className="tier-price">$1,000<span>+</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Full proposal-to-defense support</li>
-                  <li>Systematic review support</li>
-                  <li>Research publication preparation</li>
-                  <li>Grant research assistance</li>
-                  <li>Dedicated weekly check-ins</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Academic%20Research%20Consulting%20($1000+)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
+      <section id="catalogue" className="sol-catalogue">
+        <div className="sol-controls">
+          <input
+            type="text"
+            placeholder="Search solution categories..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="sol-search"
+          />
+          <div className="sol-filters">
+            <button
+              className={"sol-filter-chip" + (activeFilter === "All" ? " active" : "")}
+              onClick={() => setActiveFilter("All")}
+            >
+              All
+            </button>
+            {CATEGORIES.map((c) => (
+              <button
+                key={c.title}
+                className={"sol-filter-chip" + (activeFilter === c.title ? " active" : "")}
+                onClick={() => setActiveFilter(c.title)}
+              >
+                {c.title}
+              </button>
+            ))}
           </div>
         </div>
 
-        {/* PILLAR 2 */}
-        <div className="pillar">
-          <div className="pillar-header">
-            <div className="pillar-icon">D</div>
-            <div>
-              <div className="pillar-title">Data Analysis &amp; Statistics</div>
-              <div className="pillar-sub">SPSS - EViews - Excel - R - Python</div>
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Basic</div>
-                  <div className="tier-label">Data Cleaning &amp; Entry</div>
-                </div>
-                <div className="tier-price">$50</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Data entry &amp; coding</li>
-                  <li>Data cleaning &amp; validation</li>
-                  <li>Descriptive statistics</li>
-                  <li>Excel / SPSS ready datasets</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Data%20Cleaning%20Basic%20($50)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card featured">
-              <div className="tier-head">
-                <div>
-                  <div className="featured-badge">Best Value</div>
-                  <div className="tier-name">Standard</div>
-                  <div className="tier-label">Statistical Analysis</div>
-                </div>
-                <div className="tier-price">$150</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>T-tests, ANOVA, Correlation</li>
-                  <li>Regression analysis</li>
-                  <li>Survey data analysis</li>
-                  <li>Results interpretation</li>
-                  <li>Statistical report writing</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Statistical%20Analysis%20Standard%20($150)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Advanced</div>
-                  <div className="tier-label">Econometric &amp; Time Series</div>
-                </div>
-                <div className="tier-price">$300</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Econometric analysis (EViews)</li>
-                  <li>Time series analysis</li>
-                  <li>Agricultural data analysis</li>
-                  <li>Data visualization &amp; dashboards</li>
-                  <li>PowerPoint data presentation</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Econometric%20Analysis%20($300)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Elite</div>
-                  <div className="tier-label">Statistical Consulting</div>
-                </div>
-                <div className="tier-price">$500<span>+</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Full research data analysis</li>
-                  <li>Monitoring &amp; Evaluation support</li>
-                  <li>Custom dashboard creation</li>
-                  <li>NGO / business data reporting</li>
-                  <li>Ongoing statistical consulting</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Statistical%20Consulting%20($500+)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-          </div>
+        <div className="sol-section-head">
+          <span className="sol-label">Solution Categories</span>
+          <h2>Every Challenge, One Trusted Partner</h2>
+          <p>Clients engage Eduxellence Solutions Bright Horizon for end-to-end professional solutions, not isolated tasks.</p>
         </div>
 
-        {/* PILLAR 3 */}
-        <div className="pillar">
-          <div className="pillar-header">
-            <div className="pillar-icon">T</div>
-            <div>
-              <div className="pillar-title">Teaching &amp; Tutoring</div>
-              <div className="pillar-sub">6+ years experience across English, Research, SPSS &amp; more</div>
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Single Session</div>
-                  <div className="tier-label">1-Hour Tutoring</div>
-                </div>
-                <div className="tier-price">$20<span>/hr</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>English / TEFL tutoring</li>
-                  <li>WAEC / NECO preparation</li>
-                  <li>Statistics &amp; SPSS basics</li>
-                  <li>Academic writing coaching</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20a%20single%20tutoring%20session" target="_blank" rel="noopener noreferrer" className="tier-btn">Book Session</a>
-              </div>
-            </div>
-            <div className="tier-card featured">
-              <div className="tier-head">
-                <div>
-                  <div className="featured-badge">Most Popular</div>
-                  <div className="tier-name">Package</div>
-                  <div className="tier-label">5-Session Bundle</div>
-                </div>
-                <div className="tier-price">$100</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>5 one-hour sessions (save 20%)</li>
-                  <li>Agric Economics / Research Methods</li>
-                  <li>SPSS hands-on training</li>
-                  <li>Session notes &amp; study resources</li>
-                  <li>Flexible scheduling</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%205-Session%20Tutoring%20Bundle%20($100)" target="_blank" rel="noopener noreferrer" className="tier-btn">Book Bundle</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Workshop</div>
-                  <div className="tier-label">Research Training Workshop</div>
-                </div>
-                <div className="tier-price">$300</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Full-day or multi-session workshop</li>
-                  <li>SPSS, Research Methodology or Academic Writing</li>
-                  <li>Group or 1-on-1 format</li>
-                  <li>Certificate of participation</li>
-                  <li>Training materials included</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20a%20Research%20Training%20Workshop%20($300)" target="_blank" rel="noopener noreferrer" className="tier-btn">Book Workshop</a>
-              </div>
-            </div>
-          </div>
-        </div>
+        {filtered.length === 0 && (
+          <p className="sol-empty">No solution categories match your search.</p>
+        )}
 
-        {/* PILLAR 4 */}
-        <div className="pillar">
-          <div className="pillar-header">
-            <div className="pillar-icon">C</div>
-            <div>
-              <div className="pillar-title">Content Writing &amp; Creation</div>
-              <div className="pillar-sub">SEO articles, educational content, e-books &amp; more</div>
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Basic</div>
-                  <div className="tier-label">Blog &amp; Social Content</div>
+        <div className="sol-grid">
+          {filtered.map((cat) => {
+            const isCollapsed = collapsed[cat.title];
+            return (
+              <div key={cat.title} className="sol-card">
+                <div className="sol-card-header" onClick={() => toggleCollapse(cat.title)}>
+                  <div className="sol-icon">{cat.icon}</div>
+                  <div className="sol-card-title-wrap">
+                    <div className="sol-card-title">{cat.title}</div>
+                    <div className="sol-card-desc">{cat.description}</div>
+                  </div>
+                  <div className="sol-toggle">{isCollapsed ? "+" : "-"}</div>
                 </div>
-                <div className="tier-price">$50</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>2 blog posts (800-1,000 words each)</li>
-                  <li>Social media content (1 week)</li>
-                  <li>Newsletter writing</li>
-                  <li>Basic SEO optimisation</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Content%20Basic%20package%20($50)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card featured">
-              <div className="tier-head">
-                <div>
-                  <div className="featured-badge">Best Value</div>
-                  <div className="tier-name">Standard</div>
-                  <div className="tier-label">SEO Articles &amp; Web Copy</div>
-                </div>
-                <div className="tier-price">$150</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>4 SEO-optimised articles (1,200+ words)</li>
-                  <li>Website content (up to 5 pages)</li>
-                  <li>Research-based articles</li>
-                  <li>Script writing for videos</li>
-                  <li>Study guides or course notes</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20Content%20Standard%20package%20($150)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Premium</div>
-                  <div className="tier-label">E-Book &amp; Long-Form</div>
-                </div>
-                <div className="tier-price">$300</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>E-book writing (up to 10,000 words)</li>
-                  <li>Educational content packages</li>
-                  <li>Full content strategy</li>
-                  <li>Formatted, publication-ready output</li>
-                  <li>2 revision rounds</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20the%20E-Book%20Content%20package%20($300)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* PILLAR 5 */}
-        <div className="pillar">
-          <div className="pillar-header">
-            <div className="pillar-icon">M</div>
-            <div>
-              <div className="pillar-title">Digital Marketing</div>
-              <div className="pillar-sub">Growth strategy, social media management &amp; copywriting</div>
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Starter</div>
-                  <div className="tier-label">Social Media Setup</div>
-                </div>
-                <div className="tier-price">$100</div>
+                {!isCollapsed && (
+                  <div className="sol-packages">
+                    {cat.packages.map((pkg) => (
+                      <div key={pkg.tier} className={"sol-package" + (pkg.tier === "Enterprise" ? " enterprise" : "")}>
+                        <div className="sol-package-tier">{pkg.tier}</div>
+                        <div className="sol-package-name">{pkg.name}</div>
+                        <div className="sol-package-price">{pkg.price}</div>
+                        <a href={waLink(cat.title, pkg.tier, pkg.name)} target="_blank" rel="noopener noreferrer" className="sol-package-btn">
+                          Request Quote
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Facebook / WhatsApp marketing setup</li>
-                  <li>Content calendar (1 month)</li>
-                  <li>Basic Canva graphic designs (10)</li>
-                  <li>Marketing copywriting</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Starter%20($100)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card featured">
-              <div className="tier-head">
-                <div>
-                  <div className="featured-badge">Most Popular</div>
-                  <div className="tier-name">Growth</div>
-                  <div className="tier-label">Monthly Management</div>
-                </div>
-                <div className="tier-price">$300<span>/mo</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Full social media management</li>
-                  <li>Community management</li>
-                  <li>Email marketing campaigns</li>
-                  <li>Lead generation strategy</li>
-                  <li>Monthly performance report</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Growth%20($300/mo)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Premium</div>
-                  <div className="tier-label">Full Growth Strategy</div>
-                </div>
-                <div className="tier-price">$500<span>/mo</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>All Growth package features</li>
-                  <li>Paid ads strategy &amp; support</li>
-                  <li>Brand content production</li>
-                  <li>Funnel copywriting</li>
-                  <li>Weekly strategy calls</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Digital%20Marketing%20Premium%20($500/mo)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* PILLAR 6 */}
-        <div className="pillar">
-          <div className="pillar-header">
-            <div className="pillar-icon">S</div>
-            <div>
-              <div className="pillar-title">High-Ticket Sales &amp; Lead Generation</div>
-              <div className="pillar-sub">Appointment setting, lead qualification &amp; sales support</div>
-            </div>
-          </div>
-          <div className="tier-grid">
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Starter</div>
-                  <div className="tier-label">Lead Qualification</div>
-                </div>
-                <div className="tier-price">$300</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Lead research &amp; list building</li>
-                  <li>Lead qualification calls</li>
-                  <li>CRM data entry &amp; management</li>
-                  <li>Weekly leads report</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Lead%20Generation%20Starter%20($300)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card featured">
-              <div className="tier-head">
-                <div>
-                  <div className="featured-badge">High Impact</div>
-                  <div className="tier-name">Standard</div>
-                  <div className="tier-label">Appointment Setting</div>
-                </div>
-                <div className="tier-price">$500</div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>Appointment setting (monthly retainer)</li>
-                  <li>Discovery call support</li>
-                  <li>Sales funnel support</li>
-                  <li>Customer relationship management</li>
-                  <li>Performance tracking</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Appointment%20Setting%20Standard%20($500)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-            <div className="tier-card">
-              <div className="tier-head">
-                <div>
-                  <div className="tier-name">Elite</div>
-                  <div className="tier-label">Full Sales Support</div>
-                </div>
-                <div className="tier-price">$1,500<span>+</span></div>
-              </div>
-              <div className="tier-body">
-                <ul>
-                  <li>High-ticket closing support</li>
-                  <li>Full sales pipeline management</li>
-                  <li>Outreach copywriting &amp; scripts</li>
-                  <li>Dedicated sales strategy sessions</li>
-                  <li>Coaches, Agencies &amp; SaaS focus</li>
-                </ul>
-                <a href="https://wa.me/2348135980311?text=I'm%20interested%20in%20Full%20Sales%20Support%20Elite%20($1500+)" target="_blank" rel="noopener noreferrer" className="tier-btn">Get Started</a>
-              </div>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="cta-section">
+      <section className="sol-cta-section">
         <h2>Ready to Get Started?</h2>
-        <p>Book a free consultation and let&apos;s discuss how we can help you achieve your goals.</p>
-        <a href="https://wa.me/2348135980311?text=Hello%2C%20I'd%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="cta-btn">Book Free Consultation</a>
+        <p>Book a free consultation and let&apos;s discuss the right solution for your needs.</p>
+        <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20book%20a%20free%20consultation" target="_blank" rel="noopener noreferrer" className="sol-cta-btn">
+          Book Free Consultation
+        </a>
       </section>
 
-      {/* FOOTER */}
       <footer>
         <p style={{ marginBottom: "0.5rem", fontFamily: "'Playfair Display',serif", fontSize: "1rem", color: "rgba(255,255,255,0.7)" }}>
           Eduxellence <strong>Solutions</strong>
@@ -519,6 +286,283 @@ export default function ServicesPage() {
           <a href="mailto:eduxellencesolutions@gmail.com">eduxellencesolutions@gmail.com</a>
         </p>
       </footer>
+
+      <style jsx>{`
+        .sol-hero {
+          background: linear-gradient(160deg, #0d0d0d 0%, #1a1508 60%, #2a1f08 100%);
+          padding: 130px 5% 70px;
+          text-align: center;
+        }
+        .sol-hero-badge {
+          display: inline-block;
+          border: 1px solid rgba(200, 150, 12, 0.5);
+          color: var(--gold);
+          font-size: 0.75rem;
+          font-weight: 600;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          padding: 0.4rem 1rem;
+          border-radius: 2px;
+          margin-bottom: 1.5rem;
+        }
+        .sol-hero h1 {
+          font-family: "Playfair Display", serif;
+          font-size: clamp(2.4rem, 5vw, 3.6rem);
+          font-weight: 700;
+          color: #fff;
+          margin-bottom: 1rem;
+        }
+        .sol-hero p {
+          font-size: 1.05rem;
+          color: rgba(255, 255, 255, 0.65);
+          max-width: 640px;
+          margin: 0 auto 2rem;
+          font-weight: 300;
+        }
+        .sol-hero-cta {
+          display: inline-block;
+          background: var(--gold);
+          color: var(--ink);
+          padding: 0.85rem 2rem;
+          border-radius: 4px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: background 0.2s;
+        }
+        .sol-hero-cta:hover {
+          background: #e8a90e;
+        }
+
+        .sol-catalogue {
+          background: var(--white);
+          padding: 70px 5%;
+        }
+        .sol-controls {
+          max-width: 900px;
+          margin: 0 auto 2.5rem;
+        }
+        .sol-search {
+          width: 100%;
+          padding: 0.85rem 1.1rem;
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          font-size: 0.95rem;
+          margin-bottom: 1rem;
+          font-family: "DM Sans", sans-serif;
+        }
+        .sol-filters {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        .sol-filter-chip {
+          background: var(--cream-dark);
+          border: 1px solid var(--border);
+          color: var(--ink-soft);
+          padding: 0.45rem 1rem;
+          border-radius: 999px;
+          font-size: 0.8rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+        .sol-filter-chip.active {
+          background: var(--gold);
+          color: var(--ink);
+          border-color: var(--gold);
+          font-weight: 600;
+        }
+        .sol-filter-chip:hover {
+          border-color: var(--gold);
+        }
+
+        .sol-section-head {
+          text-align: center;
+          max-width: 640px;
+          margin: 0 auto 3rem;
+        }
+        .sol-label {
+          font-size: 0.7rem;
+          font-weight: 600;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--gold);
+          display: block;
+          margin-bottom: 0.6rem;
+        }
+        .sol-section-head h2 {
+          font-family: "Playfair Display", serif;
+          font-size: clamp(1.7rem, 3vw, 2.4rem);
+          margin-bottom: 0.75rem;
+        }
+        .sol-section-head p {
+          color: var(--muted);
+          font-size: 0.95rem;
+        }
+
+        .sol-empty {
+          text-align: center;
+          color: var(--muted);
+          padding: 2rem;
+        }
+
+        .sol-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+          gap: 1.5rem;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+
+        .sol-card {
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          overflow: hidden;
+          background: var(--card-bg);
+          transition: box-shadow 0.25s, transform 0.25s;
+        }
+        .sol-card:hover {
+          box-shadow: var(--shadow);
+          transform: translateY(-2px);
+        }
+
+        .sol-card-header {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          padding: 1.25rem 1.5rem;
+          cursor: pointer;
+          background: var(--cream-dark);
+        }
+        .sol-icon {
+          width: 42px;
+          height: 42px;
+          min-width: 42px;
+          border-radius: 8px;
+          background: var(--gold);
+          color: var(--ink);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 1.1rem;
+        }
+        .sol-card-title-wrap {
+          flex: 1;
+        }
+        .sol-card-title {
+          font-family: "Playfair Display", serif;
+          font-size: 1.05rem;
+          font-weight: 700;
+        }
+        .sol-card-desc {
+          font-size: 0.78rem;
+          color: var(--muted);
+          margin-top: 0.15rem;
+        }
+        .sol-toggle {
+          font-size: 1.3rem;
+          font-weight: 700;
+          color: var(--gold-dark);
+          width: 24px;
+          text-align: center;
+        }
+
+        .sol-packages {
+          padding: 1.25rem 1.5rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+          animation: sol-fade-in 0.2s ease;
+        }
+        @keyframes sol-fade-in {
+          from { opacity: 0; transform: translateY(-6px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .sol-package {
+          border: 1px solid var(--border);
+          border-radius: 8px;
+          padding: 0.9rem 1.1rem;
+          transition: border-color 0.2s;
+        }
+        .sol-package:hover {
+          border-color: var(--gold);
+        }
+        .sol-package.enterprise {
+          background: var(--gold-light);
+          border-color: var(--gold);
+        }
+        .sol-package-tier {
+          font-size: 0.68rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--gold-dark);
+          margin-bottom: 0.2rem;
+        }
+        .sol-package-name {
+          font-size: 0.92rem;
+          font-weight: 600;
+          margin-bottom: 0.3rem;
+        }
+        .sol-package-price {
+          font-size: 0.82rem;
+          color: var(--muted);
+          margin-bottom: 0.6rem;
+        }
+        .sol-package-btn {
+          display: inline-block;
+          background: var(--ink);
+          color: var(--white);
+          padding: 0.4rem 0.9rem;
+          border-radius: 5px;
+          font-size: 0.78rem;
+          font-weight: 600;
+          text-decoration: none;
+          transition: background 0.2s;
+        }
+        .sol-package-btn:hover {
+          background: var(--gold);
+          color: var(--ink);
+        }
+
+        .sol-cta-section {
+          background: var(--ink);
+          color: var(--white);
+          text-align: center;
+          padding: 4rem 5%;
+        }
+        .sol-cta-section h2 {
+          font-family: "Playfair Display", serif;
+          font-size: clamp(1.7rem, 3vw, 2.3rem);
+          margin-bottom: 0.75rem;
+          color: var(--white);
+        }
+        .sol-cta-section p {
+          color: rgba(255, 255, 255, 0.55);
+          margin-bottom: 1.5rem;
+        }
+        .sol-cta-btn {
+          display: inline-block;
+          background: var(--gold);
+          color: var(--ink);
+          padding: 0.85rem 2.2rem;
+          border-radius: 4px;
+          font-weight: 600;
+          text-decoration: none;
+          transition: background 0.2s;
+        }
+        .sol-cta-btn:hover {
+          background: #e8a90e;
+        }
+
+        @media (max-width: 768px) {
+          .sol-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
     </>
   );
 }
