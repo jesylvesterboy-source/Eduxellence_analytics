@@ -28,6 +28,17 @@ export default async function ExpertDashboard() {
     .eq("expert_id", user.id)
     .order("created_at", { ascending: false });
 
+  const { data: reviews } = await supabase
+    .from("reviews")
+    .select("rating, projects!inner(expert_id)")
+    .eq("projects.expert_id", user.id);
+
+  const reviewCount = reviews?.length ?? 0;
+  const avgRating =
+    reviewCount > 0
+      ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1)
+      : null;
+
   const statusLabels: Record<string, string> = {
     assigned: "Newly Assigned",
     in_progress: "In Progress",
@@ -55,6 +66,20 @@ export default async function ExpertDashboard() {
             <LogoutButton />
           </div>
         </div>
+
+        {reviewCount > 0 && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem", display: "flex", alignItems: "center", gap: "1rem" }}>
+            <div style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--gold-dark)" }}>{avgRating}</div>
+            <div>
+              <div style={{ fontSize: "1rem", color: "var(--gold)" }}>
+                {"★".repeat(Math.round(Number(avgRating)))}{"☆".repeat(5 - Math.round(Number(avgRating)))}
+              </div>
+              <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                Based on {reviewCount} review{reviewCount > 1 ? "s" : ""}
+              </div>
+            </div>
+          </div>
+        )}
 
         {!projects || projects.length === 0 ? (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
