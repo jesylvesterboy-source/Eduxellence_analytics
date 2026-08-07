@@ -12,7 +12,7 @@ export default function PaymentPage() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [project, setProject] = useState<{ title: string; payment_reference: string | null } | null>(null);
-  const [quotation, setQuotation] = useState<{ amount: number } | null>(null);
+  const [quotation, setQuotation] = useState<{ amount: number; usd_to_ngn_rate: number | null } | null>(null);
   const [existingPayment, setExistingPayment] = useState<{ id: string; status: string; verification_status: string } | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -34,7 +34,7 @@ export default function PaymentPage() {
 
     const { data: quote } = await supabase
       .from("quotations")
-      .select("amount")
+      .select("amount, usd_to_ngn_rate")
       .eq("project_id", projectId)
       .eq("status", "approved")
       .order("created_at", { ascending: false })
@@ -77,6 +77,7 @@ export default function PaymentPage() {
       verification_status: "pending",
       transaction_reference: project?.payment_reference,
       proof_of_payment_url: proofUrl,
+      usd_to_ngn_rate: quotation.usd_to_ngn_rate,
     });
 
     setSubmitting(false);
@@ -103,6 +104,12 @@ export default function PaymentPage() {
         <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
           {project.title} — Amount due: <strong style={{ color: "var(--ink)" }}>${quotation.amount}</strong>
         </p>
+
+        {quotation.usd_to_ngn_rate && (
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1rem" }}>
+            ≈ ₦{(quotation.amount * quotation.usd_to_ngn_rate).toLocaleString()} at Eduxellence&apos;s platform conversion rate of ₦{quotation.usd_to_ngn_rate} = $1 (for payment purposes only — not the official market exchange rate)
+          </p>
+        )}
 
         {existingPayment && existingPayment.status !== "pending" ? (
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.5rem", textAlign: "center" }}>
@@ -131,8 +138,25 @@ export default function PaymentPage() {
               <div style={{ fontWeight: 600, marginBottom: "0.75rem" }}>Pay by Bank Transfer</div>
 
               <div style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "1rem", marginBottom: "1rem", fontSize: "0.85rem" }}>
-                <div style={{ marginBottom: "0.5rem" }}><strong>USD Account (Raenest):</strong> [Add account details]</div>
-                <div style={{ marginBottom: "0.5rem" }}><strong>NGN Account (Raenest):</strong> [Add account details]</div>
+                <div style={{ marginBottom: "0.75rem" }}>
+                  <strong>USD Account (Raenest):</strong>
+                  <div style={{ marginTop: "0.25rem", lineHeight: 1.6 }}>
+                    Account Name: Jeremiah Williams Sylvester<br />
+                    Bank: Regent Bank<br />
+                    Account Number: 117120079290<br />
+                    Account Type: Checking<br />
+                    Routing Number: 103913434<br />
+                    Bank Address: 7136 S. Yale Ave., Suite 100, Tulsa, OK 74136, USA
+                  </div>
+                </div>
+                <div style={{ marginBottom: "0.5rem" }}>
+                  <strong>NGN Account (Raenest/Kredi Money Mfb Ltd):</strong>
+                  <div style={{ marginTop: "0.25rem", lineHeight: 1.6 }}>
+                    Account Name: Raenest/Jeremiah Williams Sylvester<br />
+                    Account Number: 1842639663<br />
+                    Bank: Kredi Money Mfb Ltd
+                  </div>
+                </div>
                 <div>
                   <strong>Payment Reference:</strong>{" "}
                   <span style={{ background: "var(--gold-light)", padding: "0.2rem 0.5rem", borderRadius: "4px", fontFamily: "monospace" }}>

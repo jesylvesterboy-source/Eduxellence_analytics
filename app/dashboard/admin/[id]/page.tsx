@@ -250,11 +250,19 @@ export default function AdminProjectDetail() {
 
   async function sendQuotation() {
     if (!quoteAmount || !userId) return;
+
+    const { data: settings } = await supabase
+      .from("platform_settings")
+      .select("usd_to_ngn_rate")
+      .eq("id", 1)
+      .single();
+
     await supabase.from("quotations").insert({
       project_id: projectId,
       amount: parseFloat(quoteAmount),
       description: quoteDesc || null,
       created_by: userId,
+      usd_to_ngn_rate: settings?.usd_to_ngn_rate ?? null,
     });
     await supabase.from("projects").update({ status: "in_review" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, status: "in_review" } : prev));

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import LogoutButton from "../logout-button";
 import BackHomeBar from "../_components/back-home-bar";
 import NotificationBell from "../_components/notification-bell";
+import RateSettingsCard from "./_components/rate-settings-card";
 
 export default async function AdminDashboard() {
   const supabase = await createClient();
@@ -84,6 +85,8 @@ export default async function AdminDashboard() {
             <StatCard label="Held Payments" value={`$${stats.held_payments || 0}`} />
           </div>
         )}
+
+        <RateSettingsCard />
 
         <h2 style={{ fontSize: "1.1rem", fontWeight: 600, marginBottom: "1rem" }}>All Projects</h2>
 
