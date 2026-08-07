@@ -26,7 +26,7 @@ export default function ExpertProjectDetail() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [project, setProject] = useState<{ title: string; status: string; description: string | null; deadline: string | null } | null>(null);
+  const [project, setProject] = useState<{ title: string; status: string; description: string | null; deadline: string | null; client_id: string } | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
   const [newMessage, setNewMessage] = useState("");
@@ -61,7 +61,7 @@ export default function ExpertProjectDetail() {
 
     const { data: proj } = await supabase
       .from("projects")
-      .select("title, status, description, deadline")
+      .select("title, status, description, deadline, client_id")
       .eq("id", projectId)
       .single();
     setProject(proj);
@@ -89,7 +89,6 @@ export default function ExpertProjectDetail() {
       setActiveRevision(null);
     }
 
-    // --- ADDED: fetch review for this specific project ---
     if (proj?.status === "completed") {
       const { data: reviewData } = await supabase
         .from("reviews")
@@ -98,7 +97,6 @@ export default function ExpertProjectDetail() {
         .maybeSingle();
       setReview(reviewData);
     }
-    // --- END ADDED ---
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -198,6 +196,30 @@ export default function ExpertProjectDetail() {
   async function startWork() {
     await supabase.from("projects").update({ status: "in_progress" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, status: "in_progress" } : prev));
+
+    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+    const notifRows: { user_id: string; title: string; body: string; link: string }[] = [];
+
+    if (project?.client_id) {
+      notifRows.push({
+        user_id: project.client_id,
+        title: "Work Started",
+        body: `Work has begun on your project "${project.title}".`,
+        link: `/dashboard/client/${projectId}`,
+      });
+    }
+    admins?.forEach((a) =>
+      notifRows.push({
+        user_id: a.id,
+        title: "Expert Started Work",
+        body: `The assigned expert has started work on "${project?.title ?? "a project"}".`,
+        link: `/dashboard/admin/${projectId}`,
+      })
+    );
+
+    if (notifRows.length > 0) {
+      await supabase.from("notifications").insert(notifRows);
+    }
   }
 
   async function submitForQA() {
@@ -242,7 +264,6 @@ export default function ExpertProjectDetail() {
           </div>
         )}
 
-        {/* --- ADDED: review block, only for completed projects --- */}
         {project.status === "completed" && review && (
           <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Client Review</div>
@@ -257,7 +278,6 @@ export default function ExpertProjectDetail() {
             <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{new Date(review.created_at).toLocaleString()}</p>
           </div>
         )}
-        {/* --- END ADDED --- */}
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
           {project.status === "assigned" && (

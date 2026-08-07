@@ -275,26 +275,23 @@ export default function AdminProjectDetail() {
     if (!selectedExpert) return;
     await supabase.from("projects").update({ expert_id: selectedExpert, status: "assigned" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, expert_id: selectedExpert, status: "assigned" } : prev));
+
+    await supabase.from("notifications").insert([
+      {
+        user_id: selectedExpert,
+        title: "New Project Assigned",
+        body: `You've been assigned to work on "${project?.title ?? "a project"}".`,
+        link: `/dashboard/expert/${projectId}`,
+      },
+      {
+        user_id: project?.client_id,
+        title: "Expert Assigned",
+        body: `An expert has been assigned to your project "${project?.title ?? "a project"}".`,
+        link: `/dashboard/client/${projectId}`,
+      },
+    ]);
+
     alert("Expert assigned.");
-  }
-
-  async function markQaReview() {
-    await supabase.from("projects").update({ status: "qa_review" }).eq("id", projectId);
-    setProject((prev) => (prev ? { ...prev, status: "qa_review" } : prev));
-  }
-
-  async function markDelivered() {
-    await supabase.from("projects").update({ status: "delivered" }).eq("id", projectId);
-    setProject((prev) => (prev ? { ...prev, status: "delivered" } : prev));
-
-    const active = revisionRequests.find((r) => r.status === "in_progress");
-    if (active) {
-      await supabase
-        .from("revision_requests")
-        .update({ status: "resolved", resolved_at: new Date().toISOString() })
-        .eq("id", active.id);
-      loadData();
-    }
   }
 
   async function sendRevisionToExpert() {
@@ -324,6 +321,25 @@ export default function AdminProjectDetail() {
 
     setSendingToExpert(false);
     loadData();
+  }
+
+  async function markQaReview() {
+    await supabase.from("projects").update({ status: "qa_review" }).eq("id", projectId);
+    setProject((prev) => (prev ? { ...prev, status: "qa_review" } : prev));
+  }
+
+  async function markDelivered() {
+    await supabase.from("projects").update({ status: "delivered" }).eq("id", projectId);
+    setProject((prev) => (prev ? { ...prev, status: "delivered" } : prev));
+
+    const active = revisionRequests.find((r) => r.status === "in_progress");
+    if (active) {
+      await supabase
+        .from("revision_requests")
+        .update({ status: "resolved", resolved_at: new Date().toISOString() })
+        .eq("id", active.id);
+      loadData();
+    }
   }
 
   if (!project) {
@@ -421,17 +437,6 @@ export default function AdminProjectDetail() {
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
-
-            {review && (
-              <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
-                <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Review</div>
-                <p style={{ fontSize: "1.1rem", color: "var(--gold-dark)", marginBottom: "0.4rem" }}>
-                  {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
-                </p>
-                {review.comment && <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>{review.comment}</p>}
-                <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{new Date(review.created_at).toLocaleString()}</p>
               </div>
             )}
 
@@ -587,15 +592,26 @@ export default function AdminProjectDetail() {
               onReleased={() => setProject((prev) => (prev ? { ...prev, status: "completed" } : prev))}
             />
 
+            {review && (
+              <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Review</div>
+                <p style={{ fontSize: "1.1rem", color: "var(--gold-dark)", marginBottom: "0.4rem" }}>
+                  {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                </p>
+                {review.comment ? (
+                  <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>{review.comment}</p>
+                ) : (
+                  <p style={{ fontSize: "0.8rem", color: "var(--muted)", fontStyle: "italic" }}>No written comment left.</p>
+                )}
+                <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{new Date(review.created_at).toLocaleString()}</p>
+              </div>
+            )}
+
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Workflow Actions</div>
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 <button onClick={markQaReview} style={actionBtnStyle}>Mark: In QA Review</button>
-                <button onClick={markDelivered} style={actionBtnStyle}>
-                  {revisionRequests.some((r) => r.status === "in_progress") 
-                    ? "Approve Revision & Send to Client" 
-                    : "Mark: Delivered to Client"}
-                </button>
+                <button onClick={markDelivered} style={actionBtnStyle}>Mark: Delivered to Client</button>
               </div>
             </div>
           </div>

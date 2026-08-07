@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Script from "next/script";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../../_components/back-home-bar";
 
@@ -11,12 +12,14 @@ export default function PaymentPage() {
   const supabase = createClient();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState("");
   const [project, setProject] = useState<{ title: string; payment_reference: string | null } | null>(null);
   const [quotation, setQuotation] = useState<{ amount: number; usd_to_ngn_rate: number | null } | null>(null);
   const [existingPayment, setExistingPayment] = useState<{ id: string; status: string; verification_status: string } | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [verifying, setVerifying] = useState(false);
 
   const loadData = useCallback(async () => {
     const {
@@ -24,6 +27,9 @@ export default function PaymentPage() {
     } = await supabase.auth.getUser();
     if (!user) return;
     setUserId(user.id);
+
+    const { data: myProfile } = await supabase.from("profiles").select("email").eq("id", user.id).single();
+    setUserEmail(myProfile?.email || user.email || "");
 
     const { data: proj } = await supabase
       .from("projects")
@@ -85,6 +91,80 @@ export default function PaymentPage() {
     loadData();
   }
 
+  function payWithFlutterwave() {
+    const w = window as any;
+    if (!w.FlutterwaveCheckout) {
+      alert("Payment gateway still loading — try again in a moment.");
+      return;
+    }
+    w.FlutterwaveCheckout({
+      public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY,
+      tx_ref: `EDUX-FLW-${projectId}-${Date.now()}`,
+      amount: quotation!.amount,
+      currency: "USD",
+      payment_options: "card,ussd,banktransfer",
+      customer: { email: userEmail },
+      customizations: { title: "Eduxellence Analytics", description: project?.title ?? "Project payment" },
+      callback: async (response: any) => {
+        setVerifying(true);
+        const res = await fetch("/api/payments/verify", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ provider: "flutterwave", reference: response.transaction_id || response.tx_ref, projectId }),
+        });
+        const json = await res.json();
+        setVerifying(false);
+        if (json.success) {
+          setSubmitted(true);
+          loadData();
+        } else {
+          alert("Payment verification failed: " + (json.error || "unknown error"));
+        }
+      },
+      onclose: () => {},
+    });
+  }
+
+  function payWithPaystack() {
+    const w = window as any;
+    if (!w.PaystackPop) {
+      alert("Payment gateway still loading — try again in a moment.");
+      return;
+    }
+    if (!quotation?.usd_to_ngn_rate) {
+      alert("No conversion rate set for this quotation. Contact Admin.");
+      return;
+    }
+    const amountNgn = Math.round(quotation.amount * quotation.usd_to_ngn_rate * 100); // kobo
+    const handler = w.PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email: userEmail,
+      amount: amountNgn,
+      currency: "NGN",
+      ref: `EDUX-PSK-${projectId}-${Date.now()}`,
+      callback: (response: any) => {
+        (async () => {
+          setVerifying(true);
+          const res = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ provider: "paystack", reference: response.reference, projectId }),
+          });
+          const json = await res.json();
+          setVerifying(false);
+          if (json.success) {
+            setSubmitted(true);
+            loadData();
+          } else {
+            alert("Payment verification failed: " + (json.error || "unknown error"));
+          }
+        })();
+      },
+      onClose: () => {},
+    });
+    handler.openIframe();
+  }
+
   if (!project || !quotation) {
     return (
       <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>
@@ -95,6 +175,9 @@ export default function PaymentPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
+      <Script src="https://checkout.flutterwave.com/v3.js" strategy="afterInteractive" />
+      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
         <BackHomeBar backHref={`/dashboard/client/${projectId}`} backLabel="Back to Project" />
 
@@ -122,14 +205,29 @@ export default function PaymentPage() {
           </div>
         ) : (
           <>
-            {/* Online payment — enabled once gateway keys are configured */}
-            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.25rem", opacity: 0.6 }}>
-              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Pay Online (Card / Transfer / USSD)</div>
-              <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
-                Instant confirmation via Flutterwave or Paystack. Coming online shortly.
+            {/* Online payment — fully functional */}
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Pay Online</div>
+              <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.9rem" }}>
+                Instant confirmation via card, bank transfer, or USSD.
               </p>
-              <button disabled style={{ width: "100%", background: "var(--border)", color: "var(--muted)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: "not-allowed" }}>
-                Pay Now (temporarily unavailable)
+              <button
+                onClick={payWithFlutterwave}
+                disabled={verifying}
+                style={{ width: "100%", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: verifying ? "not-allowed" : "pointer", marginBottom: "0.6rem" }}
+              >
+                {verifying ? "Verifying..." : `Pay $${quotation.amount} with Flutterwave (USD)`}
+              </button>
+              <button
+                onClick={payWithPaystack}
+                disabled={verifying || !quotation.usd_to_ngn_rate}
+                style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: verifying ? "not-allowed" : "pointer" }}
+              >
+                {verifying
+                  ? "Verifying..."
+                  : quotation.usd_to_ngn_rate
+                  ? `Pay ₦${(quotation.amount * quotation.usd_to_ngn_rate).toLocaleString()} with Paystack (NGN)`
+                  : "Paystack unavailable — no rate set"}
               </button>
             </div>
 
