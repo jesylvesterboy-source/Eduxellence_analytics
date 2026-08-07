@@ -13,6 +13,12 @@ type Message = {
   file_name: string | null;
 };
 
+type Review = {
+  rating: number;
+  comment: string | null;
+  created_at: string;
+};
+
 export default function ExpertProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
@@ -26,6 +32,7 @@ export default function ExpertProjectDetail() {
   const [newMessage, setNewMessage] = useState("");
   const [uploading, setUploading] = useState(false);
   const [activeRevision, setActiveRevision] = useState<{ id: string; notes: string } | null>(null);
+  const [review, setReview] = useState<Review | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -81,6 +88,17 @@ export default function ExpertProjectDetail() {
     } else {
       setActiveRevision(null);
     }
+
+    // --- ADDED: fetch review for this specific project ---
+    if (proj?.status === "completed") {
+      const { data: reviewData } = await supabase
+        .from("reviews")
+        .select("rating, comment, created_at")
+        .eq("project_id", projectId)
+        .maybeSingle();
+      setReview(reviewData);
+    }
+    // --- END ADDED ---
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -223,6 +241,23 @@ export default function ExpertProjectDetail() {
             <p style={{ fontSize: "0.9rem" }}>{activeRevision.notes}</p>
           </div>
         )}
+
+        {/* --- ADDED: review block, only for completed projects --- */}
+        {project.status === "completed" && review && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Client Review</div>
+            <p style={{ fontSize: "1.1rem", color: "var(--gold-dark)", marginBottom: "0.4rem" }}>
+              {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+            </p>
+            {review.comment ? (
+              <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>{review.comment}</p>
+            ) : (
+              <p style={{ fontSize: "0.8rem", color: "var(--muted)", fontStyle: "italic" }}>No written comment left.</p>
+            )}
+            <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{new Date(review.created_at).toLocaleString()}</p>
+          </div>
+        )}
+        {/* --- END ADDED --- */}
 
         <div style={{ display: "flex", gap: "0.75rem", marginBottom: "1.5rem" }}>
           {project.status === "assigned" && (
