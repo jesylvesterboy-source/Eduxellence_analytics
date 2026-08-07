@@ -36,6 +36,12 @@ type RevisionRequest = {
   resolved_at: string | null;
 };
 
+type Review = {
+  rating: number;
+  comment: string | null;
+  created_at: string;
+};
+
 export default function AdminProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
@@ -56,6 +62,7 @@ export default function AdminProjectDetail() {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
   const [sendingToExpert, setSendingToExpert] = useState(false);
+  const [review, setReview] = useState<Review | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -115,6 +122,13 @@ export default function AdminProjectDetail() {
       .eq("project_id", projectId)
       .order("created_at", { ascending: true });
     setRevisionRequests(revisions || []);
+
+    const { data: reviewData } = await supabase
+      .from("reviews")
+      .select("rating, comment, created_at")
+      .eq("project_id", projectId)
+      .maybeSingle();
+    setReview(reviewData);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -399,6 +413,17 @@ export default function AdminProjectDetail() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {review && (
+              <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Review</div>
+                <p style={{ fontSize: "1.1rem", color: "var(--gold-dark)", marginBottom: "0.4rem" }}>
+                  {"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}
+                </p>
+                {review.comment && <p style={{ fontSize: "0.85rem", marginBottom: "0.4rem" }}>{review.comment}</p>}
+                <p style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{new Date(review.created_at).toLocaleString()}</p>
               </div>
             )}
 
