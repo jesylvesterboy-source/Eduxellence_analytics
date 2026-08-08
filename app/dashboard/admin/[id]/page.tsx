@@ -67,7 +67,7 @@ export default function AdminProjectDetail() {
   const [experts, setExperts] = useState<Expert[]>([]);
   const [selectedExpert, setSelectedExpert] = useState("");
   const [fixedFee, setFixedFee] = useState("");
-  const [expertFeeInput, setExpertFeeInput] = useState("");
+  const [clientQuotationInput, setClientQuotationInput] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDesc, setQuoteDesc] = useState("");
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -401,9 +401,11 @@ export default function AdminProjectDetail() {
   };
 
   const selectedExpertObj = experts.find((e) => e.id === selectedExpert);
-  const suggestedClientAmount =
-    expertFeeInput && selectedExpertObj?.revenue_share
-      ? (parseFloat(expertFeeInput) / selectedExpertObj.revenue_share).toFixed(2)
+  
+  // NEW LOGIC: Client Quotation input → calculates Expert Fee
+  const calculatedExpertFee =
+    clientQuotationInput && selectedExpertObj?.revenue_share
+      ? (parseFloat(clientQuotationInput) * selectedExpertObj.revenue_share).toFixed(2)
       : null;
 
   return (
@@ -614,9 +616,9 @@ export default function AdminProjectDetail() {
             </div>
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Expert Fee → Client Quotation</div>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Quotation → Expert Fee</div>
               <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
-                Select an expert below, then enter the fee you&apos;ve agreed with them — this calculates what to quote the client based on their revenue-share level.
+                Enter the amount you&apos;ve agreed with the client. The system will auto-calculate the expert&apos;s share based on their revenue-share level.
               </p>
 
               {!selectedExpert ? (
@@ -630,26 +632,26 @@ export default function AdminProjectDetail() {
                   </p>
                   <input
                     type="number"
-                    placeholder="Agreed expert fee (USD)"
-                    value={expertFeeInput}
-                    onChange={(e) => setExpertFeeInput(e.target.value)}
+                    placeholder="Agreed client quotation (USD)"
+                    value={clientQuotationInput}
+                    onChange={(e) => setClientQuotationInput(e.target.value)}
                     style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
                   />
-                  {suggestedClientAmount && (
+                  {calculatedExpertFee && (
                     <div style={{ background: "var(--cream-dark)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
-                      <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Suggested client quotation</div>
-                      <div style={{ fontSize: "1.2rem", fontWeight: 700 }}>${suggestedClientAmount}</div>
+                      <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Calculated expert fee</div>
+                      <div style={{ fontSize: "1.2rem", fontWeight: 700, color: "var(--gold-dark)" }}>${calculatedExpertFee}</div>
                       <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
-                        Eduxellence share: ${(parseFloat(suggestedClientAmount) - parseFloat(expertFeeInput)).toFixed(2)}
+                        Eduxellence share: ${(parseFloat(clientQuotationInput) - parseFloat(calculatedExpertFee)).toFixed(2)}
                       </div>
                     </div>
                   )}
                   <button
                     onClick={() => {
-                      if (suggestedClientAmount) setQuoteAmount(suggestedClientAmount);
+                      if (clientQuotationInput) setQuoteAmount(clientQuotationInput);
                     }}
-                    disabled={!suggestedClientAmount}
-                    style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: suggestedClientAmount ? "pointer" : "not-allowed" }}
+                    disabled={!clientQuotationInput}
+                    style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: clientQuotationInput ? "pointer" : "not-allowed" }}
                   >
                     Use as Quotation Amount
                   </button>
