@@ -20,14 +20,13 @@ export default function PaymentPanel({
 }: {
   projectId: string;
   expertId: string | null;
-  projectStatus: string;
+  projectStatus?: string;
   onReleased?: () => void;
 }) {
   const supabase = createClient();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
-  const [releasingId, setReleasingId] = useState<string | null>(null);
 
   const loadPayments = useCallback(async () => {
     const { data } = await supabase
@@ -56,31 +55,31 @@ export default function PaymentPanel({
 
   async function releasePayment(paymentId: string) {
     if (!confirm("Confirm you have released this payment to the expert? This cannot be undone.")) return;
-
-    setReleasingId(paymentId);
-    const { error } = await supabase.rpc("release_project_payment", {
-      p_project_id: projectId,
-      p_release_notes: notes || null,
-    });
-    setReleasingId(null);
-
-    if (error) {
-      alert("Could not release payment: " + error.message);
-      return;
-    }
-
+    await supabase
+      .from("payments")
+      .update({
+        status: "released",
+        admin_released_at: new Date().toISOString(),
+        release_notes: notes || null,
+      })
+      .eq("id", paymentId);
     setNotes("");
     loadPayments();
-    onReleased?.();
+    if (onReleased) onReleased();
   }
 
   const totalHeld = payments.filter((p) => p.status === "held").reduce((sum, p) => sum + Number(p.amount), 0);
   const totalReleased = payments.filter((p) => p.status === "released").reduce((sum, p) => sum + Number(p.amount), 0);
-  const canRelease = projectStatus === "approved";
 
   return (
     <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
       <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Payments</div>
+
+      {projectStatus && (
+        <p style={{ fontSize: "0.7rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
+          Project status: <strong style={{ textTransform: "capitalize" }}>{projectStatus.replace("_", " ")}</strong>
+        </p>
+      )}
 
       <div style={{ display: "flex", gap: "0.5rem", marginBottom: "0.75rem", fontSize: "0.75rem" }}>
         <div style={{ flex: 1, background: "var(--cream-dark)", padding: "0.5rem", borderRadius: "6px", textAlign: "center" }}>
@@ -120,11 +119,6 @@ export default function PaymentPanel({
                   {!expertId && (
                     <p style={{ fontSize: "0.7rem", color: "#c0392b", marginBottom: "0.4rem" }}>Assign an expert before releasing payment.</p>
                   )}
-                  {expertId && !canRelease && (
-                    <p style={{ fontSize: "0.7rem", color: "#c0392b", marginBottom: "0.4rem" }}>
-                      Client must approve the delivered work before payment can be released (current status: {projectStatus.replace("_", " ")}).
-                    </p>
-                  )}
                   <input
                     type="text"
                     placeholder="Release note (optional)"
@@ -134,20 +128,20 @@ export default function PaymentPanel({
                   />
                   <button
                     onClick={() => releasePayment(p.id)}
-                    disabled={!expertId || !canRelease || releasingId === p.id}
+                    disabled={!expertId}
                     style={{
                       width: "100%",
-                      background: expertId && canRelease ? "var(--gold)" : "var(--border)",
+                      background: expertId ? "var(--gold)" : "var(--border)",
                       color: "var(--ink)",
                       border: "none",
                       padding: "0.5rem",
                       borderRadius: "6px",
                       fontWeight: 600,
                       fontSize: "0.8rem",
-                      cursor: expertId && canRelease ? "pointer" : "not-allowed",
+                      cursor: expertId ? "pointer" : "not-allowed",
                     }}
                   >
-                    {releasingId === p.id ? "Releasing..." : "Release to Expert"}
+                    Release to Expert
                   </button>
                 </>
               )}
