@@ -64,6 +64,7 @@ export default function PaymentPanel({
       })
       .eq("id", paymentId);
     setNotes("");
+    await supabase.from("projects").update({ status: "completed" }).eq("id", projectId);
     loadPayments();
     if (onReleased) onReleased();
   }
