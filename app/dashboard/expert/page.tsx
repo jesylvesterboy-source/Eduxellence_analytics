@@ -16,7 +16,7 @@ export default async function ExpertDashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role")
+    .select("full_name, role, expert_level_id")
     .eq("id", user.id)
     .single();
 
@@ -38,6 +38,29 @@ export default async function ExpertDashboard() {
     reviewCount > 0
       ? (reviews!.reduce((sum, r) => sum + r.rating, 0) / reviewCount).toFixed(1)
       : null;
+
+  const { data: currentLevel } = await supabase
+    .from("expert_levels")
+    .select("id, level_order, level_name, badge, revenue_share")
+    .eq("id", profile?.expert_level_id)
+    .maybeSingle();
+
+  const { data: nextLevel } = await supabase
+    .from("expert_levels")
+    .select("level_name, revenue_share, min_projects, min_reviews, min_rating, min_on_time_pct")
+    .eq("level_order", (currentLevel?.level_order ?? 1) + 1)
+    .maybeSingle();
+
+  const { data: statsRows } = await supabase.rpc("fn_expert_stats", { p_expert_id: user.id });
+  const stats = statsRows?.[0] ?? { projects_count: 0, reviews_count: 0, avg_rating: null, on_time_pct: null };
+
+  const { data: earningsRows } = await supabase
+    .from("expert_earnings")
+    .select("expert_earnings, status")
+    .eq("expert_id", user.id);
+
+  const pendingTotal = (earningsRows || []).filter((e) => e.status === "pending").reduce((s, e) => s + Number(e.expert_earnings), 0);
+  const availableTotal = (earningsRows || []).filter((e) => e.status === "available").reduce((s, e) => s + Number(e.expert_earnings), 0);
 
   const statusLabels: Record<string, string> = {
     assigned: "Newly Assigned",
@@ -81,6 +104,66 @@ export default async function ExpertDashboard() {
           </div>
         )}
 
+        {currentLevel && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.5rem" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem" }}>
+              <div>
+                <div style={{ fontSize: "0.75rem", color: "var(--muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                  Your Eduxellence Growth Plan
+                </div>
+                <div style={{ fontSize: "1.3rem", fontWeight: 700, marginTop: "0.25rem" }}>{currentLevel.level_name}</div>
+                <div style={{ fontSize: "0.85rem", color: "var(--gold-dark)", fontWeight: 600 }}>
+                  {Math.round(currentLevel.revenue_share * 100)}% Expert Share
+                </div>
+              </div>
+              <span style={{ background: "var(--gold-light)", color: "var(--ink)", padding: "0.3rem 0.8rem", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 600 }}>
+                {currentLevel.badge}
+              </span>
+            </div>
+
+            {nextLevel ? (
+              <>
+                <div style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
+                  Next: <strong>{nextLevel.level_name}</strong> — {Math.round(nextLevel.revenue_share * 100)}% share
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", fontSize: "0.8rem" }}>
+                  <ProgressRow label="Projects" value={stats.projects_count} target={nextLevel.min_projects} />
+                  <ProgressRow label="Reviews" value={stats.reviews_count} target={nextLevel.min_reviews} />
+                  <ProgressRow label="Avg Rating" value={stats.avg_rating ?? 0} target={nextLevel.min_rating} decimal />
+                  <ProgressRow label="On-Time" value={stats.on_time_pct ?? 0} target={nextLevel.min_on_time_pct} suffix="%" />
+                </div>
+                {stats.projects_count >= nextLevel.min_projects &&
+                stats.reviews_count >= nextLevel.min_reviews &&
+                (stats.avg_rating ?? 0) >= nextLevel.min_rating &&
+                (stats.on_time_pct ?? 0) >= nextLevel.min_on_time_pct ? (
+                  <p style={{ fontSize: "0.8rem", color: "#1e8449", fontWeight: 600, marginTop: "0.9rem" }}>
+                    🎯 You&apos;ve met the requirements for {nextLevel.level_name}. Your promotion is awaiting Admin review.
+                  </p>
+                ) : (
+                  <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.9rem" }}>
+                    Keep delivering great work to progress toward {nextLevel.level_name}.
+                  </p>
+                )}
+              </>
+            ) : (
+              <p style={{ fontSize: "0.85rem", color: "var(--gold-dark)", fontWeight: 600 }}>
+                You&apos;ve reached the highest level — Elite Expert. 🎉
+              </p>
+            )}
+          </div>
+        )}
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--gold-dark)" }}>${pendingTotal.toLocaleString()}</div>
+            <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Pending Earnings</div>
+          </div>
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", textAlign: "center" }}>
+            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1e8449" }}>${availableTotal.toLocaleString()}</div>
+            <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Available Balance</div>
+          </div>
+        </div>
+
         {!projects || projects.length === 0 ? (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
             No projects assigned yet. Admin will assign work here when available.
@@ -115,6 +198,19 @@ export default async function ExpertDashboard() {
             ))}
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function ProgressRow({ label, value, target, decimal = false, suffix = "" }: { label: string; value: number; target: number; decimal?: boolean; suffix?: string }) {
+  const met = value >= target;
+  const display = decimal ? value.toFixed(1) : Math.round(value);
+  return (
+    <div style={{ background: "var(--cream-dark)", borderRadius: "6px", padding: "0.5rem 0.7rem" }}>
+      <div style={{ color: "var(--muted)", fontSize: "0.7rem" }}>{label}</div>
+      <div style={{ fontWeight: 600, color: met ? "#1e8449" : "var(--ink)" }}>
+        {display}{suffix} / {decimal ? target.toFixed(1) : target}{suffix}
       </div>
     </div>
   );

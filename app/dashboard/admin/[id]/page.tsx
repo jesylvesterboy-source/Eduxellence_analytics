@@ -42,6 +42,15 @@ type Review = {
   created_at: string;
 };
 
+type Offer = {
+  id: string;
+  status: string;
+  compensation_amount: number | null;
+  offered_at: string;
+  responded_at: string | null;
+  expert_name: string | null;
+};
+
 export default function AdminProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
@@ -57,12 +66,14 @@ export default function AdminProjectDetail() {
   const [uploading, setUploading] = useState(false);
   const [experts, setExperts] = useState<Expert[]>([]);
   const [selectedExpert, setSelectedExpert] = useState("");
+  const [fixedFee, setFixedFee] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDesc, setQuoteDesc] = useState("");
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [revisionRequests, setRevisionRequests] = useState<RevisionRequest[]>([]);
   const [sendingToExpert, setSendingToExpert] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -129,6 +140,13 @@ export default function AdminProjectDetail() {
       .eq("project_id", projectId)
       .maybeSingle();
     setReview(reviewData);
+
+    const { data: offerRows } = await supabase
+      .from("project_offers")
+      .select("id, status, compensation_amount, offered_at, responded_at, profiles!project_offers_expert_id_fkey(full_name)")
+      .eq("project_id", projectId)
+      .order("offered_at", { ascending: false });
+    setOffers((offerRows || []).map((o: any) => ({ ...o, expert_name: o.profiles?.full_name ?? null })));
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -271,27 +289,25 @@ export default function AdminProjectDetail() {
     loadData();
   }
 
-  async function assignExpert() {
-    if (!selectedExpert) return;
-    await supabase.from("projects").update({ expert_id: selectedExpert, status: "assigned" }).eq("id", projectId);
-    setProject((prev) => (prev ? { ...prev, expert_id: selectedExpert, status: "assigned" } : prev));
+  async function offerToExpert() {
+    if (!selectedExpert || !userId) return;
 
-    await supabase.from("notifications").insert([
-      {
-        user_id: selectedExpert,
-        title: "New Project Assigned",
-        body: `You've been assigned to work on "${project?.title ?? "a project"}".`,
-        link: `/dashboard/expert/${projectId}`,
-      },
-      {
-        user_id: project?.client_id,
-        title: "Expert Assigned",
-        body: `An expert has been assigned to your project "${project?.title ?? "a project"}".`,
-        link: `/dashboard/client/${projectId}`,
-      },
-    ]);
+    const { error } = await supabase.rpc("fn_offer_project", {
+      p_project_id: projectId,
+      p_expert_id: selectedExpert,
+      p_admin_id: userId,
+      p_fixed_fee: fixedFee ? parseFloat(fixedFee) : null,
+    });
 
-    alert("Expert assigned.");
+    if (error) {
+      alert("Could not send offer: " + error.message);
+      return;
+    }
+
+    setProject((prev) => (prev ? { ...prev, expert_id: selectedExpert, status: "offered" } : prev));
+    setFixedFee("");
+    loadData();
+    alert("Offer sent to expert.");
   }
 
   async function sendRevisionToExpert() {
@@ -329,7 +345,27 @@ export default function AdminProjectDetail() {
   }
 
   async function markDelivered() {
-    await supabase.from("projects").update({ status: "delivered" }).eq("id", projectId);
+    // Get current project to check if delivered_at already exists
+    const { data: currentProject } = await supabase
+      .from("projects")
+      .select("delivered_at")
+      .eq("id", projectId)
+      .single();
+
+    const updateData: any = {
+      status: "delivered",
+    };
+
+    // Only set delivered_at if it hasn't been set before (first delivery)
+    if (!currentProject?.delivered_at) {
+      updateData.delivered_at = new Date().toISOString();
+    }
+
+    await supabase
+      .from("projects")
+      .update(updateData)
+      .eq("id", projectId);
+
     setProject((prev) => (prev ? { ...prev, status: "delivered" } : prev));
 
     const active = revisionRequests.find((r) => r.status === "in_progress");
@@ -561,7 +597,7 @@ export default function AdminProjectDetail() {
             </div>
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Assign Expert</div>
+              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Offer Project to Expert</div>
               <select
                 value={selectedExpert}
                 onChange={(e) => setSelectedExpert(e.target.value)}
@@ -572,11 +608,18 @@ export default function AdminProjectDetail() {
                   <option key={ex.id} value={ex.id}>{ex.full_name || ex.email}</option>
                 ))}
               </select>
+              <input
+                type="number"
+                placeholder="Optional: fixed expert fee (overrides % share)"
+                value={fixedFee}
+                onChange={(e) => setFixedFee(e.target.value)}
+                style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.5rem" }}
+              />
               <button
-                onClick={assignExpert}
+                onClick={offerToExpert}
                 style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem" }}
               >
-                Assign
+                Send Offer
               </button>
               {project.expert_id && (
                 <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.5rem" }}>
@@ -584,6 +627,18 @@ export default function AdminProjectDetail() {
                 </p>
               )}
             </div>
+
+            {offers.length > 0 && (
+              <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.9rem" }}>Offer History</div>
+                {offers.map((o) => (
+                  <div key={o.id} style={{ fontSize: "0.8rem", marginBottom: "0.5rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--border)" }}>
+                    <div>{o.expert_name || "Unknown"} — <span style={{ fontWeight: 600, textTransform: "capitalize", color: o.status === "accepted" ? "#1e8449" : o.status === "declined" ? "#c0392b" : "var(--gold-dark)" }}>{o.status}</span></div>
+                    {o.compensation_amount && <div style={{ color: "var(--muted)" }}>Offered compensation: ${o.compensation_amount}</div>}
+                  </div>
+                ))}
+              </div>
+            )}
 
             <PaymentPanel
               projectId={projectId}
