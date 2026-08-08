@@ -15,7 +15,7 @@ type Message = {
   thread_type: string;
 };
 
-type Expert = { id: string; full_name: string | null; email: string | null };
+type Expert = { id: string; full_name: string | null; email: string | null; revenue_share: number | null };
 
 type Quotation = {
   id: string;
@@ -67,6 +67,7 @@ export default function AdminProjectDetail() {
   const [experts, setExperts] = useState<Expert[]>([]);
   const [selectedExpert, setSelectedExpert] = useState("");
   const [fixedFee, setFixedFee] = useState("");
+  const [expertFeeInput, setExpertFeeInput] = useState("");
   const [quoteAmount, setQuoteAmount] = useState("");
   const [quoteDesc, setQuoteDesc] = useState("");
   const [quotations, setQuotations] = useState<Quotation[]>([]);
@@ -117,8 +118,18 @@ export default function AdminProjectDetail() {
     setExpertMessages(eMsgs);
     if (allMsgs) resolveFileLinks(allMsgs);
 
-    const { data: expertList } = await supabase.from("profiles").select("id, full_name, email").eq("role", "expert");
-    setExperts(expertList || []);
+    const { data: expertList } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, expert_levels!profiles_expert_level_id_fkey(revenue_share)")
+      .eq("role", "expert");
+    setExperts(
+      (expertList || []).map((e: any) => ({
+        id: e.id,
+        full_name: e.full_name,
+        email: e.email,
+        revenue_share: e.expert_levels?.revenue_share ?? null,
+      }))
+    );
 
     const { data: quotes } = await supabase
       .from("quotations")
@@ -389,6 +400,12 @@ export default function AdminProjectDetail() {
     rejected: "#c0392b",
   };
 
+  const selectedExpertObj = experts.find((e) => e.id === selectedExpert);
+  const suggestedClientAmount =
+    expertFeeInput && selectedExpertObj?.revenue_share
+      ? (parseFloat(expertFeeInput) / selectedExpertObj.revenue_share).toFixed(2)
+      : null;
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
@@ -594,6 +611,50 @@ export default function AdminProjectDetail() {
               >
                 Send Quotation
               </button>
+            </div>
+
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Expert Fee → Client Quotation</div>
+              <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
+                Select an expert below, then enter the fee you&apos;ve agreed with them — this calculates what to quote the client based on their revenue-share level.
+              </p>
+
+              {!selectedExpert ? (
+                <p style={{ fontSize: "0.8rem", color: "var(--gold-dark)" }}>Select an expert in the panel below first.</p>
+              ) : !selectedExpertObj?.revenue_share ? (
+                <p style={{ fontSize: "0.8rem", color: "#c0392b" }}>Selected expert has no level assigned — cannot calculate.</p>
+              ) : (
+                <>
+                  <p style={{ fontSize: "0.8rem", marginBottom: "0.5rem" }}>
+                    {selectedExpertObj.full_name || selectedExpertObj.email} — {Math.round(selectedExpertObj.revenue_share * 100)}% share
+                  </p>
+                  <input
+                    type="number"
+                    placeholder="Agreed expert fee (USD)"
+                    value={expertFeeInput}
+                    onChange={(e) => setExpertFeeInput(e.target.value)}
+                    style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
+                  />
+                  {suggestedClientAmount && (
+                    <div style={{ background: "var(--cream-dark)", borderRadius: "6px", padding: "0.75rem", marginBottom: "0.5rem" }}>
+                      <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Suggested client quotation</div>
+                      <div style={{ fontSize: "1.2rem", fontWeight: 700 }}>${suggestedClientAmount}</div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>
+                        Eduxellence share: ${(parseFloat(suggestedClientAmount) - parseFloat(expertFeeInput)).toFixed(2)}
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    onClick={() => {
+                      if (suggestedClientAmount) setQuoteAmount(suggestedClientAmount);
+                    }}
+                    disabled={!suggestedClientAmount}
+                    style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: suggestedClientAmount ? "pointer" : "not-allowed" }}
+                  >
+                    Use as Quotation Amount
+                  </button>
+                </>
+              )}
             </div>
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
