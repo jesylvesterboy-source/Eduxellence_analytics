@@ -107,18 +107,24 @@ export default function PaymentPage() {
       customizations: { title: "Eduxellence Analytics", description: project?.title ?? "Project payment" },
       callback: async (response: any) => {
         setVerifying(true);
-        const res = await fetch("/api/payments/verify", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ provider: "flutterwave", reference: response.transaction_id || response.tx_ref, projectId }),
-        });
-        const json = await res.json();
-        setVerifying(false);
-        if (json.success) {
-          setSubmitted(true);
-          loadData();
-        } else {
-          alert("Payment verification failed: " + (json.error || "unknown error"));
+        try {
+          const res = await fetch("/api/payments/verify", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ provider: "flutterwave", reference: response.transaction_id || response.tx_ref, projectId }),
+          });
+          const json = await res.json();
+          if (json.success) {
+            setSubmitted(true);
+            loadData();
+          } else {
+            alert("Payment verification failed: " + (json.error || "unknown error"));
+          }
+        } catch (err: any) {
+          console.error("Verification request failed:", err);
+          alert("Could not reach the server to verify payment. Check your connection and try again, or contact support with reference: " + (response.transaction_id || response.tx_ref));
+        } finally {
+          setVerifying(false);
         }
       },
       onclose: () => {},
@@ -145,18 +151,24 @@ export default function PaymentPage() {
       callback: (response: any) => {
         (async () => {
           setVerifying(true);
-          const res = await fetch("/api/payments/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ provider: "paystack", reference: response.reference, projectId }),
-          });
-          const json = await res.json();
-          setVerifying(false);
-          if (json.success) {
-            setSubmitted(true);
-            loadData();
-          } else {
-            alert("Payment verification failed: " + (json.error || "unknown error"));
+          try {
+            const res = await fetch("/api/payments/verify", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ provider: "paystack", reference: response.reference, projectId }),
+            });
+            const json = await res.json();
+            if (json.success) {
+              setSubmitted(true);
+              loadData();
+            } else {
+              alert("Payment verification failed: " + (json.error || "unknown error"));
+            }
+          } catch (err: any) {
+            console.error("Verification request failed:", err);
+            alert("Could not reach the server to verify payment. Check your connection and try again, or contact support with reference: " + response.reference);
+          } finally {
+            setVerifying(false);
           }
         })();
       },

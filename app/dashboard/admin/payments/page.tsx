@@ -14,19 +14,25 @@ type PaymentRow = {
   verification_status: string | null;
   created_at: string;
   project_id: string;
-  projects: { title: string; client_id: string; expert_id: string | null } | null;
+  projects: { title: string; client_id: string; expert_id: string | null; status: string } | null;
 };
 
 export default function AdminPaymentsPage() {
   const supabase = createClient();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [proofLinks, setProofLinks] = useState<Record<string, string>>({});
+  const [actingId, setActingId] = useState<string | null>(null);
 
   const loadPayments = useCallback(async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("payments")
-      .select("id, amount, status, method, transaction_reference, proof_of_payment_url, verification_status, created_at, project_id, projects(title, client_id, expert_id)")
+      .select("id, amount, status, method, transaction_reference, proof_of_payment_url, verification_status, created_at, project_id, projects(title, client_id, expert_id, status)")
       .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Failed to load payments:", error.message);
+      return;
+    }
 
     const rows = (data || []) as unknown as PaymentRow[];
     setPayments(rows);
@@ -46,22 +52,49 @@ export default function AdminPaymentsPage() {
   }, [loadPayments]);
 
   async function verifyPayment(id: string) {
-    await supabase
+    setActingId(id);
+    const { error } = await supabase
       .from("payments")
       .update({ verification_status: "verified", status: "held" })
       .eq("id", id);
+    setActingId(null);
+    if (error) {
+      alert("Could not verify payment: " + error.message);
+      return;
+    }
     loadPayments();
   }
 
   async function rejectPayment(id: string) {
     if (!confirm("Reject this payment notification?")) return;
-    await supabase.from("payments").update({ verification_status: "rejected" }).eq("id", id);
+    setActingId(id);
+    const { error } = await supabase.from("payments").update({ verification_status: "rejected" }).eq("id", id);
+    setActingId(null);
+    if (error) {
+      alert("Could not reject payment: " + error.message);
+      return;
+    }
     loadPayments();
   }
 
-  async function releasePayment(id: string) {
-    if (!confirm("Confirm release to expert?")) return;
-    await supabase.from("payments").update({ status: "released", admin_released_at: new Date().toISOString() }).eq("id", id);
+  async function releasePayment(p: PaymentRow) {
+    if (!p.projects) return;
+    if (p.projects.status !== "approved") {
+      alert(`Cannot release yet — client must approve the work first (current project status: ${p.projects.status}).`);
+      return;
+    }
+    if (!confirm("Confirm release to expert? This cannot be undone.")) return;
+
+    setActingId(p.id);
+    const { error } = await supabase.rpc("release_project_payment", {
+      p_project_id: p.project_id,
+      p_release_notes: null,
+    });
+    setActingId(null);
+    if (error) {
+      alert("Could not release payment: " + error.message);
+      return;
+    }
     loadPayments();
   }
 
@@ -118,14 +151,22 @@ export default function AdminPaymentsPage() {
                       View Proof
                     </a>
                   )}
-                  <button onClick={() => verifyPayment(p.id)} style={smallBtn("var(--gold)", "var(--ink)")}>Verify Payment</button>
-                  <button onClick={() => rejectPayment(p.id)} style={smallBtn("transparent", "#c0392b", true)}>Reject</button>
+                  <button onClick={() => verifyPayment(p.id)} disabled={actingId === p.id} style={smallBtn("var(--gold)", "var(--ink)")}>
+                    {actingId === p.id ? "Working..." : "Verify Payment"}
+                  </button>
+                  <button onClick={() => rejectPayment(p.id)} disabled={actingId === p.id} style={smallBtn("transparent", "#c0392b", true)}>
+                    Reject
+                  </button>
                 </div>
               )}
 
               {p.status === "held" && (
-                <button onClick={() => releasePayment(p.id)} disabled={!p.projects?.expert_id} style={smallBtn(p.projects?.expert_id ? "var(--ink)" : "var(--border)", "var(--white)")}>
-                  Release to Expert
+                <button
+                  onClick={() => releasePayment(p)}
+                  disabled={!p.projects?.expert_id || actingId === p.id}
+                  style={smallBtn(p.projects?.expert_id ? "var(--ink)" : "var(--border)", "var(--white)")}
+                >
+                  {actingId === p.id ? "Working..." : "Release to Expert"}
                 </button>
               )}
             </div>
