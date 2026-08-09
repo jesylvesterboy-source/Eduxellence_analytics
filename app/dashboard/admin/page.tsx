@@ -100,6 +100,20 @@ export default async function AdminDashboard() {
             >
               Applications
             </Link>
+            <Link
+              href="/dashboard/admin/testimonials"
+              style={{
+                background: "var(--gold)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Testimonials
+            </Link>
             <NotificationBell />
             <LogoutButton />
           </div>

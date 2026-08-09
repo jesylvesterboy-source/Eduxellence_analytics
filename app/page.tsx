@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type SolutionPreview = {
   icon: string;
@@ -23,6 +24,100 @@ const SOLUTIONS: SolutionPreview[] = [
   { icon: "C", title: "Creative & Digital Media", description: "Branding, design and multimedia production.", startingPrice: "Starting from $100" },
   { icon: "P", title: "Professional Support Services", description: "Business support for professionals and organizations.", startingPrice: "Starting from $15/hour" },
 ];
+
+function TrustAndTestimonials() {
+  const supabase = createClient();
+  const [metrics, setMetrics] = useState<{ avg_rating: number | null; completed_projects: number; expert_count: number } | null>(null);
+  const [testimonials, setTestimonials] = useState<{ client_name: string; project_title: string | null; quote: string; rating: number | null }[]>([]);
+
+  useEffect(() => {
+    supabase.rpc("fn_platform_trust_metrics").then(({ data }) => {
+      if (data && data[0]) setMetrics(data[0]);
+    });
+    supabase
+      .from("testimonials")
+      .select("client_name, project_title, quote, rating")
+      .eq("approved", true)
+      .eq("show_on_homepage", true)
+      .order("created_at", { ascending: false })
+      .limit(6)
+      .then(({ data }) => setTestimonials(data || []));
+  }, [supabase]);
+
+  return (
+    <>
+      {metrics && (
+        <section style={{ background: "var(--ink)", padding: "3rem 5%" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "2rem", maxWidth: "900px", margin: "0 auto", textAlign: "center" }}>
+            <div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.2rem", fontWeight: 700, color: "var(--gold)" }}>
+                {metrics.avg_rating ?? "—"}★
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)" }}>Average Client Rating</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.2rem", fontWeight: 700, color: "var(--gold)" }}>
+                {metrics.completed_projects}+
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)" }}>Projects Completed</div>
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Playfair Display', serif", fontSize: "2.2rem", fontWeight: 700, color: "var(--gold)" }}>
+                {metrics.expert_count}+
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.6)" }}>Vetted Experts</div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {testimonials.length > 0 && (
+        <section style={{ background: "var(--white)", padding: "70px 5%" }}>
+          <div className="section-head center">
+            <span className="section-label">Client Feedback</span>
+            <h2 className="section-title">What Clients Say</h2>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", maxWidth: "1100px", margin: "0 auto" }}>
+            {testimonials.map((t, i) => (
+              <div key={i} style={{ background: "var(--card-bg)", border: "1px solid var(--border)", borderRadius: "12px", padding: "1.5rem" }}>
+                {t.rating && <div style={{ color: "var(--gold)", fontSize: "1.1rem", marginBottom: "0.6rem" }}>{"★".repeat(t.rating)}{"☆".repeat(5 - t.rating)}</div>}
+                <p style={{ fontSize: "0.9rem", color: "var(--ink-soft)", marginBottom: "0.75rem" }}>&ldquo;{t.quote}&rdquo;</p>
+                <p style={{ fontSize: "0.8rem", fontWeight: 600 }}>{t.client_name}</p>
+                {t.project_title && <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>{t.project_title}</p>}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+    </>
+  );
+}
+
+function WhyChooseEduxellence() {
+  const points = [
+    { icon: "🎯", title: "Managed, Not Freelance", text: "We assign the right expert internally and manage quality — you never chase individual freelancers." },
+    { icon: "✅", title: "Vetted Experts Only", text: "Every expert passes CV, ID, and portfolio review before joining the network." },
+    { icon: "🔒", title: "Secure, Escrow-Style Payments", text: "Funds are held until you approve the completed work." },
+    { icon: "📈", title: "Consistent Quality Assurance", text: "Every deliverable is reviewed by Admin before it reaches you." },
+  ];
+  return (
+    <section style={{ background: "var(--cream)", padding: "70px 5%" }}>
+      <div className="section-head center">
+        <span className="section-label">Why Eduxellence</span>
+        <h2 className="section-title">Why Choose Eduxellence</h2>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "1.5rem", maxWidth: "1000px", margin: "0 auto" }}>
+        {points.map((p) => (
+          <div key={p.title} style={{ textAlign: "center" }}>
+            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>{p.icon}</div>
+            <div style={{ fontFamily: "'Playfair Display', serif", fontWeight: 700, marginBottom: "0.5rem" }}>{p.title}</div>
+            <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>{p.text}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function Home() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -92,6 +187,17 @@ export default function Home() {
             <a href="https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20a%20project" target="_blank" rel="noopener noreferrer" className="btn-outline">Get Started</a>
           </div>
         </div>
+      </section>
+
+      <TrustAndTestimonials />
+      <WhyChooseEduxellence />
+
+      <section className="cta-section">
+        <h2>Ready to Get Started?</h2>
+        <p>Tell us what you need — we&apos;ll match you with the right expert and manage the entire project for you.</p>
+        <a href="https://wa.me/2348135980311?text=Hello%2C%20I%27d%20like%20to%20get%20started" target="_blank" rel="noopener noreferrer" className="cta-btn">
+          Get Started Today
+        </a>
       </section>
 
       {/* SOLUTIONS PREVIEW */}
