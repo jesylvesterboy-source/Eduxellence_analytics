@@ -659,11 +659,12 @@ export default function AdminProjectDetail() {
                   <button
                     onClick={() => {
                       if (clientQuotationInput) setQuoteAmount(clientQuotationInput);
+                      if (calculatedExpertFee) setFixedFee(calculatedExpertFee);
                     }}
                     disabled={!clientQuotationInput}
                     style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: clientQuotationInput ? "pointer" : "not-allowed" }}
                   >
-                    Use as Quotation Amount
+                    Use for Quotation &amp; Offer
                   </button>
                 </>
               )}
