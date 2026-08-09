@@ -44,10 +44,14 @@ type Review = {
 
 type Offer = {
   id: string;
+  expert_id: string;
   status: string;
   compensation_amount: number | null;
   offered_at: string;
   responded_at: string | null;
+  response_deadline: string | null;
+  reminder_sent_at: string | null;
+  decline_reason: string | null;
   expert_name: string | null;
 };
 
@@ -155,7 +159,7 @@ export default function AdminProjectDetail() {
 
     const { data: offerRows } = await supabase
       .from("project_offers")
-      .select("id, status, compensation_amount, offered_at, responded_at, profiles!project_offers_expert_id_fkey(full_name)")
+      .select("id, expert_id, status, compensation_amount, offered_at, responded_at, response_deadline, reminder_sent_at, decline_reason, profiles!project_offers_expert_id_fkey(full_name)")
       .eq("project_id", projectId)
       .order("offered_at", { ascending: false });
     setOffers((offerRows || []).map((o: any) => ({ ...o, expert_name: o.profiles?.full_name ?? null })));
@@ -349,6 +353,43 @@ export default function AdminProjectDetail() {
 
     setSendingToExpert(false);
     loadData();
+  }
+
+  async function sendReminder(offerId: string) {
+    const { error } = await supabase.rpc("fn_send_offer_reminder", { p_offer_id: offerId });
+    if (error) { alert(error.message); return; }
+    loadData();
+  }
+
+  async function extendOffer(offerId: string) {
+    const extra = prompt("Extend by how many minutes?", "30");
+    if (!extra) return;
+    const { error } = await supabase.rpc("fn_extend_offer_response", { p_offer_id: offerId, p_extra_minutes: parseInt(extra) });
+    if (error) { alert(error.message); return; }
+    loadData();
+  }
+
+  async function cancelOffer(offerId: string) {
+    if (!confirm("Cancel this offer? The project will become unassigned.")) return;
+    const { error } = await supabase.rpc("fn_cancel_offer", { p_offer_id: offerId });
+    if (error) { alert(error.message); return; }
+    loadData();
+  }
+
+  async function reassignOffer(offerId: string) {
+    if (!selectedExpert || !userId) {
+      alert("Select a new expert in the panel below first.");
+      return;
+    }
+    const { error } = await supabase.rpc("fn_reassign_offer", {
+      p_old_offer_id: offerId,
+      p_new_expert_id: selectedExpert,
+      p_admin_id: userId,
+      p_fixed_fee: fixedFee ? parseFloat(fixedFee) : null,
+    });
+    if (error) { alert(error.message); return; }
+    loadData();
+    alert("Reassigned to new expert.");
   }
 
   async function markQaReview() {
@@ -705,12 +746,30 @@ export default function AdminProjectDetail() {
             {offers.length > 0 && (
               <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
                 <div style={{ fontWeight: 600, marginBottom: "0.6rem", fontSize: "0.9rem" }}>Offer History</div>
-                {offers.map((o) => (
-                  <div key={o.id} style={{ fontSize: "0.8rem", marginBottom: "0.5rem", paddingBottom: "0.5rem", borderBottom: "1px solid var(--border)" }}>
-                    <div>{o.expert_name || "Unknown"} — <span style={{ fontWeight: 600, textTransform: "capitalize", color: o.status === "accepted" ? "#1e8449" : o.status === "declined" ? "#c0392b" : "var(--gold-dark)" }}>{o.status}</span></div>
-                    {o.compensation_amount && <div style={{ color: "var(--muted)" }}>Offered compensation: ${o.compensation_amount}</div>}
-                  </div>
-                ))}
+                {offers.map((o) => {
+                  const isOverdue = o.status === "offered" && o.response_deadline && new Date(o.response_deadline) < new Date();
+                  return (
+                    <div key={o.id} style={{ fontSize: "0.8rem", marginBottom: "0.75rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--border)" }}>
+                      <div>{o.expert_name || "Unknown"} — <span style={{ fontWeight: 600, textTransform: "capitalize", color: o.status === "accepted" ? "#1e8449" : o.status === "declined" ? "#c0392b" : isOverdue ? "#c0392b" : "var(--gold-dark)" }}>{o.status === "offered" && isOverdue ? "awaiting response (overdue)" : o.status}</span></div>
+                      {o.compensation_amount && <div style={{ color: "var(--muted)" }}>Compensation: ${o.compensation_amount}</div>}
+                      {o.decline_reason && <div style={{ color: "var(--muted)" }}>Reason: {o.decline_reason}</div>}
+                      {o.status === "offered" && o.response_deadline && (
+                        <div style={{ color: "var(--muted)", fontSize: "0.7rem" }}>
+                          {isOverdue ? "Response window passed" : `Response due ${new Date(o.response_deadline).toLocaleTimeString()}`}
+                          {o.reminder_sent_at && ` · Reminder sent ${new Date(o.reminder_sent_at).toLocaleTimeString()}`}
+                        </div>
+                      )}
+                      {isOverdue && (
+                        <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                          <button onClick={() => sendReminder(o.id)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>Send Reminder</button>
+                          <button onClick={() => reassignOffer(o.id)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}>Reassign</button>
+                          <button onClick={() => extendOffer(o.id)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>Extend Time</button>
+                          <button onClick={() => cancelOffer(o.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>Cancel Offer</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 

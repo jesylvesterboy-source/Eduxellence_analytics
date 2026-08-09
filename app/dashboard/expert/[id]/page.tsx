@@ -33,6 +33,8 @@ export default function ExpertProjectDetail() {
   const [uploading, setUploading] = useState(false);
   const [activeRevision, setActiveRevision] = useState<{ id: string; notes: string } | null>(null);
   const [review, setReview] = useState<Review | null>(null);
+  const [pendingOffer, setPendingOffer] = useState<{ id: string; compensation_amount: number | null } | null>(null);
+  const [responding, setResponding] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -96,6 +98,21 @@ export default function ExpertProjectDetail() {
         .eq("project_id", projectId)
         .maybeSingle();
       setReview(reviewData);
+    }
+
+    if (proj?.status === "offered") {
+      const { data: offer } = await supabase
+        .from("project_offers")
+        .select("id, compensation_amount")
+        .eq("project_id", projectId)
+        .eq("expert_id", user.id)
+        .eq("status", "offered")
+        .order("offered_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setPendingOffer(offer);
+    } else {
+      setPendingOffer(null);
     }
   }, [projectId, supabase, resolveFileLinks]);
 
@@ -247,6 +264,25 @@ export default function ExpertProjectDetail() {
     alert("Submitted to Admin for quality review.");
   }
 
+  async function respondToOffer(response: "accepted" | "declined") {
+    let reason: string | null = null;
+    if (response === "declined") {
+      reason = prompt("Optional: let Admin know why you're declining") || null;
+    }
+    setResponding(true);
+    const { error } = await supabase.rpc("fn_respond_to_offer", {
+      p_project_id: projectId,
+      p_response: response,
+      p_decline_reason: reason,
+    });
+    setResponding(false);
+    if (error) {
+      alert("Could not respond: " + error.message);
+      return;
+    }
+    loadData();
+  }
+
   if (!project) {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
@@ -267,6 +303,25 @@ export default function ExpertProjectDetail() {
         {project.description && (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem", fontSize: "0.9rem" }}>
             <strong>Brief:</strong> {project.description}
+          </div>
+        )}
+
+        {project.status === "offered" && pendingOffer && (
+          <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>New Project Offer</div>
+            {pendingOffer.compensation_amount && (
+              <p style={{ fontSize: "0.95rem", marginBottom: "0.75rem" }}>
+                Your compensation for this project: <strong>${pendingOffer.compensation_amount.toFixed(2)}</strong>
+              </p>
+            )}
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button onClick={() => respondToOffer("accepted")} disabled={responding} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.5rem 1.25rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}>
+                {responding ? "..." : "Accept Assignment"}
+              </button>
+              <button onClick={() => respondToOffer("declined")} disabled={responding} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.5rem 1.25rem", borderRadius: "6px", cursor: "pointer" }}>
+                {responding ? "..." : "Decline"}
+              </button>
+            </div>
           </div>
         )}
 

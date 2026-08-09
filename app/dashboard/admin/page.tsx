@@ -30,6 +30,8 @@ export default async function AdminDashboard() {
 
   const { data: stats } = await supabase.from("admin_stats").select("*").single();
 
+  await supabase.rpc("fn_check_overdue_offers");
+
   const statusLabels: Record<string, string> = {
     new: "New Request",
     in_review: "Under Review",
