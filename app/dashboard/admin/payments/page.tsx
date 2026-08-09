@@ -14,6 +14,7 @@ type PaymentRow = {
   verification_status: string | null;
   created_at: string;
   project_id: string;
+  bank_currency: string | null;
   projects: { title: string; client_id: string; expert_id: string | null; status: string } | null;
 };
 
@@ -34,7 +35,7 @@ export default function AdminPaymentsPage() {
   const loadPayments = useCallback(async () => {
     const { data, error } = await supabase
       .from("payments")
-      .select("id, amount, status, method, transaction_reference, proof_of_payment_url, verification_status, created_at, project_id, projects(title, client_id, expert_id, status)")
+      .select("id, amount, status, method, transaction_reference, proof_of_payment_url, verification_status, created_at, project_id, bank_currency, projects(title, client_id, expert_id, status)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -68,12 +69,25 @@ export default function AdminPaymentsPage() {
     loadPayments();
   }, [loadPayments]);
 
-  async function verifyPayment(id: string) {
+  async function verifyPayment(id: string, projectId: string) {
     setActingId(id);
     const { error } = await supabase
       .from("payments")
       .update({ verification_status: "verified", status: "held" })
       .eq("id", id);
+
+    if (!error) {
+      const { data: proj } = await supabase.from("projects").select("client_id, title").eq("id", projectId).single();
+      if (proj?.client_id) {
+        await supabase.from("notifications").insert({
+          user_id: proj.client_id,
+          title: "Payment Confirmed ✅",
+          body: `Your payment for "${proj.title}" has been verified. Work will proceed.`,
+          link: `/dashboard/client/${projectId}`,
+        });
+      }
+    }
+
     setActingId(null);
     if (error) {
       alert("Could not verify payment: " + error.message);
@@ -146,7 +160,7 @@ export default function AdminPaymentsPage() {
                 <div>
                   <div style={{ fontWeight: 600 }}>{p.projects?.title || "Unknown project"}</div>
                   <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-                    ${p.amount} · {p.method || "unspecified"} · Ref: {p.transaction_reference || "—"}
+                    ${p.amount} · {p.method === "bank_transfer" && p.bank_currency ? `bank transfer (${p.bank_currency})` : p.method || "unspecified"} · Ref: {p.transaction_reference || "—"}
                   </div>
                 </div>
                 <span
@@ -176,7 +190,7 @@ export default function AdminPaymentsPage() {
                       View Proof
                     </a>
                   )}
-                  <button onClick={() => verifyPayment(p.id)} disabled={actingId === p.id} style={smallBtn("var(--gold)", "var(--ink)")}>
+                  <button onClick={() => verifyPayment(p.id, p.project_id)} disabled={actingId === p.id} style={smallBtn("var(--gold)", "var(--ink)")}>
                     {actingId === p.id ? "Working..." : "Verify Payment"}
                   </button>
                   <button onClick={() => rejectPayment(p.id)} disabled={actingId === p.id} style={smallBtn("transparent", "#c0392b", true)}>

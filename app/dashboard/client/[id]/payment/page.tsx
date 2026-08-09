@@ -6,6 +6,8 @@ import Script from "next/script";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../../_components/back-home-bar";
 
+type PaymentOption = "flutterwave" | "paystack" | "bank_usd" | "bank_ngn";
+
 export default function PaymentPage() {
   const params = useParams();
   const projectId = params.id as string;
@@ -16,10 +18,12 @@ export default function PaymentPage() {
   const [project, setProject] = useState<{ title: string; payment_reference: string | null } | null>(null);
   const [quotation, setQuotation] = useState<{ amount: number; usd_to_ngn_rate: number | null } | null>(null);
   const [existingPayment, setExistingPayment] = useState<{ id: string; status: string; verification_status: string } | null>(null);
+  const [selectedOption, setSelectedOption] = useState<PaymentOption | null>(null);
+  const [gatewayReference, setGatewayReference] = useState<string | null>(null);
   const [proofFile, setProofFile] = useState<File | null>(null);
+  const [showConfirmBanner, setShowConfirmBanner] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [verifying, setVerifying] = useState(false);
 
   const loadData = useCallback(async () => {
     const {
@@ -62,70 +66,25 @@ export default function PaymentPage() {
     loadData();
   }, [loadData]);
 
-  async function submitBankTransferNotification() {
-    if (!userId || !quotation) return;
-    setSubmitting(true);
-
-    let proofUrl: string | null = null;
-    if (proofFile) {
-      const filePath = `${projectId}/payment-proof-${Date.now()}-${proofFile.name}`;
-      const { error: uploadError } = await supabase.storage.from("project-files").upload(filePath, proofFile);
-      if (!uploadError) {
-        proofUrl = filePath;
-      }
-    }
-
-    await supabase.from("payments").insert({
-      project_id: projectId,
-      amount: quotation.amount,
-      method: "bank_transfer",
-      status: "pending",
-      verification_status: "pending",
-      transaction_reference: project?.payment_reference,
-      proof_of_payment_url: proofUrl,
-      usd_to_ngn_rate: quotation.usd_to_ngn_rate,
-    });
-
-    setSubmitting(false);
-    setSubmitted(true);
-    loadData();
-  }
-
   function payWithFlutterwave() {
     const w = window as any;
     if (!w.FlutterwaveCheckout) {
       alert("Payment gateway still loading — try again in a moment.");
       return;
     }
+    const ref = `EDUX-FLW-${projectId}-${Date.now()}`;
     w.FlutterwaveCheckout({
       public_key: process.env.NEXT_PUBLIC_FLUTTERWAVE_PUBLIC_KEY,
-      tx_ref: `EDUX-FLW-${projectId}-${Date.now()}`,
+      tx_ref: ref,
       amount: quotation!.amount,
       currency: "USD",
       payment_options: "card,ussd,banktransfer",
       customer: { email: userEmail },
       customizations: { title: "Eduxellence Analytics", description: project?.title ?? "Project payment" },
-      callback: async (response: any) => {
-        setVerifying(true);
-        try {
-          const res = await fetch("/api/payments/verify", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ provider: "flutterwave", reference: response.transaction_id || response.tx_ref, projectId }),
-          });
-          const json = await res.json();
-          if (json.success) {
-            setSubmitted(true);
-            loadData();
-          } else {
-            alert("Payment verification failed: " + (json.error || "unknown error"));
-          }
-        } catch (err: any) {
-          console.error("Verification request failed:", err);
-          alert("Could not reach the server to verify payment. Check your connection and try again, or contact support with reference: " + (response.transaction_id || response.tx_ref));
-        } finally {
-          setVerifying(false);
-        }
+      callback: () => {
+        setSelectedOption("flutterwave");
+        setGatewayReference(ref);
+        setShowConfirmBanner(true);
       },
       onclose: () => {},
     });
@@ -141,40 +100,76 @@ export default function PaymentPage() {
       alert("No conversion rate set for this quotation. Contact Admin.");
       return;
     }
-    const amountNgn = Math.round(quotation.amount * quotation.usd_to_ngn_rate * 100); // kobo
+    const amountNgn = Math.round(quotation.amount * quotation.usd_to_ngn_rate * 100);
+    const ref = `EDUX-PSK-${projectId}-${Date.now()}`;
     const handler = w.PaystackPop.setup({
       key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
       email: userEmail,
       amount: amountNgn,
       currency: "NGN",
-      ref: `EDUX-PSK-${projectId}-${Date.now()}`,
-      callback: (response: any) => {
-        (async () => {
-          setVerifying(true);
-          try {
-            const res = await fetch("/api/payments/verify", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ provider: "paystack", reference: response.reference, projectId }),
-            });
-            const json = await res.json();
-            if (json.success) {
-              setSubmitted(true);
-              loadData();
-            } else {
-              alert("Payment verification failed: " + (json.error || "unknown error"));
-            }
-          } catch (err: any) {
-            console.error("Verification request failed:", err);
-            alert("Could not reach the server to verify payment. Check your connection and try again, or contact support with reference: " + response.reference);
-          } finally {
-            setVerifying(false);
-          }
-        })();
+      ref,
+      callback: () => {
+        setSelectedOption("paystack");
+        setGatewayReference(ref);
+        setShowConfirmBanner(true);
       },
       onClose: () => {},
     });
     handler.openIframe();
+  }
+
+  function chooseBankTransfer(currency: "USD" | "NGN") {
+    setSelectedOption(currency === "USD" ? "bank_usd" : "bank_ngn");
+    setGatewayReference(null);
+    setShowConfirmBanner(true);
+  }
+
+  async function confirmPayment() {
+    if (!selectedOption || !userId || !quotation) return;
+    setSubmitting(true);
+
+    let proofUrl: string | null = null;
+    if (proofFile) {
+      const filePath = `${projectId}/payment-proof-${Date.now()}-${proofFile.name}`;
+      const { error: uploadError } = await supabase.storage.from("project-files").upload(filePath, proofFile);
+      if (!uploadError) proofUrl = filePath;
+    }
+
+    const method = selectedOption === "flutterwave" ? "flutterwave" : selectedOption === "paystack" ? "paystack" : "bank_transfer";
+    const bankCurrency = selectedOption === "bank_usd" ? "USD" : selectedOption === "bank_ngn" ? "NGN" : null;
+    const reference = gatewayReference || project?.payment_reference || `EDUX-BANK-${projectId}-${Date.now()}`;
+
+    await supabase.from("payments").insert({
+      project_id: projectId,
+      amount: quotation.amount,
+      method,
+      bank_currency: bankCurrency,
+      status: "pending",
+      verification_status: "pending",
+      transaction_reference: reference,
+      proof_of_payment_url: proofUrl,
+      usd_to_ngn_rate: bankCurrency === "NGN" || method === "paystack" ? quotation.usd_to_ngn_rate : null,
+    });
+
+    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+    if (admins && admins.length > 0) {
+      const methodLabel =
+        selectedOption === "flutterwave" ? "Flutterwave" :
+        selectedOption === "paystack" ? "Paystack" :
+        selectedOption === "bank_usd" ? "Raenest USD Transfer" : "Raenest NGN Transfer";
+      await supabase.from("notifications").insert(
+        admins.map((a) => ({
+          user_id: a.id,
+          title: "Payment Confirmation Needed",
+          body: `Client confirmed a payment via ${methodLabel} for "${project?.title ?? "a project"}". Please verify.`,
+          link: `/dashboard/admin/payments`,
+        }))
+      );
+    }
+
+    setSubmitting(false);
+    setSubmitted(true);
+    loadData();
   }
 
   if (!project || !quotation) {
@@ -184,6 +179,13 @@ export default function PaymentPage() {
       </div>
     );
   }
+
+  const optionLabels: Record<PaymentOption, string> = {
+    flutterwave: "Flutterwave",
+    paystack: "Paystack",
+    bank_usd: "Raenest USD Transfer",
+    bank_ngn: "Raenest NGN Transfer",
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
@@ -196,12 +198,11 @@ export default function PaymentPage() {
         <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.6rem", marginBottom: "0.5rem" }}>
           Complete Payment
         </h1>
-        <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "1.5rem" }}>
+        <p style={{ color: "var(--muted)", fontSize: "0.9rem", marginBottom: "0.5rem" }}>
           {project.title} — Amount due: <strong style={{ color: "var(--ink)" }}>${quotation.amount}</strong>
         </p>
-
         {quotation.usd_to_ngn_rate && (
-          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1rem" }}>
+          <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
             ≈ ₦{(quotation.amount * quotation.usd_to_ngn_rate).toLocaleString()} at Eduxellence&apos;s platform conversion rate of ₦{quotation.usd_to_ngn_rate} = $1 (for payment purposes only — not the official market exchange rate)
           </p>
         )}
@@ -212,41 +213,30 @@ export default function PaymentPage() {
           </div>
         ) : submitted || (existingPayment && existingPayment.verification_status === "pending") ? (
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.5rem", textAlign: "center" }}>
-            <strong>Payment notification received.</strong>
-            <p style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>Our team is verifying your transfer. You&apos;ll be notified once confirmed.</p>
+            <strong>Payment confirmation received.</strong>
+            <p style={{ fontSize: "0.85rem", marginTop: "0.5rem" }}>Our team is verifying your payment. You&apos;ll be notified once confirmed.</p>
           </div>
         ) : (
           <>
-            {/* Online payment — fully functional */}
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>Pay Online</div>
               <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.9rem" }}>
-                Instant confirmation via card, bank transfer, or USSD.
+                Card, bank transfer, or USSD via a secure payment gateway.
               </p>
-              <button
-                onClick={payWithFlutterwave}
-                disabled={verifying}
-                style={{ width: "100%", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: verifying ? "not-allowed" : "pointer", marginBottom: "0.6rem" }}
-              >
-                {verifying ? "Verifying..." : `Pay $${quotation.amount} with Flutterwave (USD)`}
+              <button onClick={payWithFlutterwave} style={{ width: "100%", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", marginBottom: "0.6rem" }}>
+                Pay ${quotation.amount} with Flutterwave (USD)
               </button>
               <button
                 onClick={payWithPaystack}
-                disabled={verifying || !quotation.usd_to_ngn_rate}
-                style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: verifying ? "not-allowed" : "pointer" }}
+                disabled={!quotation.usd_to_ngn_rate}
+                style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.75rem", borderRadius: "6px", fontWeight: 600, cursor: quotation.usd_to_ngn_rate ? "pointer" : "not-allowed" }}
               >
-                {verifying
-                  ? "Verifying..."
-                  : quotation.usd_to_ngn_rate
-                  ? `Pay ₦${(quotation.amount * quotation.usd_to_ngn_rate).toLocaleString()} with Paystack (NGN)`
-                  : "Paystack unavailable — no rate set"}
+                {quotation.usd_to_ngn_rate ? `Pay ₦${(quotation.amount * quotation.usd_to_ngn_rate).toLocaleString()} with Paystack (NGN)` : "Paystack unavailable — no rate set"}
               </button>
             </div>
 
-            {/* Bank transfer — fully functional */}
-            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem" }}>
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem" }}>Pay by Bank Transfer</div>
-
               <div style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "1rem", marginBottom: "1rem", fontSize: "0.85rem" }}>
                 <div style={{ marginBottom: "0.75rem" }}>
                   <strong>USD Account (Raenest):</strong>
@@ -260,12 +250,7 @@ export default function PaymentPage() {
                   </div>
                 </div>
                 <div style={{ marginBottom: "0.5rem" }}>
-                  <strong>NGN Account (Raenest/Kredi Money Mfb Ltd):</strong>
-                  <div style={{ marginTop: "0.25rem", lineHeight: 1.6 }}>
-                    Account Name: Raenest/Jeremiah Williams Sylvester<br />
-                    Account Number: 1842639663<br />
-                    Bank: Kredi Money Mfb Ltd
-                  </div>
+                  <strong>NGN Account (Raenest):</strong> <em style={{ color: "var(--muted)" }}>Contact Admin for details</em>
                 </div>
                 <div>
                   <strong>Payment Reference:</strong>{" "}
@@ -274,38 +259,75 @@ export default function PaymentPage() {
                   </span>
                 </div>
               </div>
-
-              <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
-                Include the reference above in your transfer, then confirm below.
+              <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.9rem" }}>
+                Include the reference above in your transfer, then tell us which account you sent to below.
               </p>
-
-              <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.35rem" }}>
-                Upload Proof of Payment (optional)
-              </label>
-              <input
-                type="file"
-                onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                style={{ width: "100%", marginBottom: "1rem", fontSize: "0.85rem" }}
-              />
-
-              <button
-                onClick={submitBankTransferNotification}
-                disabled={submitting || !project.payment_reference}
-                style={{
-                  width: "100%",
-                  background: "var(--gold)",
-                  color: "var(--ink)",
-                  border: "none",
-                  padding: "0.85rem",
-                  borderRadius: "6px",
-                  fontWeight: 600,
-                  cursor: submitting ? "not-allowed" : "pointer",
-                  opacity: submitting ? 0.6 : 1,
-                }}
-              >
-                {submitting ? "Submitting..." : "I Have Made Payment"}
-              </button>
+              <div style={{ display: "flex", gap: "0.6rem" }}>
+                <button onClick={() => chooseBankTransfer("USD")} style={{ flex: 1, background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}>
+                  I Transferred to USD Account
+                </button>
+                <button onClick={() => chooseBankTransfer("NGN")} style={{ flex: 1, background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}>
+                  I Transferred to NGN Account
+                </button>
+              </div>
             </div>
+
+            {showConfirmBanner && (
+              <div style={{ background: "#fff3cd", border: "2px solid var(--gold)", borderRadius: "10px", padding: "1.5rem", boxShadow: "0 4px 20px rgba(200,150,12,0.25)" }}>
+                <div style={{ fontWeight: 700, fontSize: "1rem", marginBottom: "0.5rem", color: "var(--gold-dark)" }}>
+                  ⚠️ Please confirm your payment method
+                </div>
+                <p style={{ fontSize: "0.85rem", marginBottom: "1rem" }}>
+                  Select the method you actually used to pay — this tells our team where to look to verify your payment.
+                </p>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", marginBottom: "1rem" }}>
+                  {(Object.keys(optionLabels) as PaymentOption[]).map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setSelectedOption(opt)}
+                      style={{
+                        padding: "0.75rem",
+                        borderRadius: "8px",
+                        border: selectedOption === opt ? "2px solid var(--gold)" : "1px solid var(--border)",
+                        background: selectedOption === opt ? "var(--gold-light)" : "var(--white)",
+                        fontWeight: 600,
+                        fontSize: "0.85rem",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {optionLabels[opt]}
+                    </button>
+                  ))}
+                </div>
+
+                {(selectedOption === "bank_usd" || selectedOption === "bank_ngn") && (
+                  <>
+                    <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.35rem" }}>
+                      Upload Proof of Payment (optional but recommended)
+                    </label>
+                    <input type="file" onChange={(e) => setProofFile(e.target.files?.[0] || null)} style={{ width: "100%", marginBottom: "1rem", fontSize: "0.85rem" }} />
+                  </>
+                )}
+
+                <button
+                  onClick={confirmPayment}
+                  disabled={!selectedOption || submitting}
+                  style={{
+                    width: "100%",
+                    background: selectedOption ? "var(--gold)" : "var(--border)",
+                    color: "var(--ink)",
+                    border: "none",
+                    padding: "0.85rem",
+                    borderRadius: "6px",
+                    fontWeight: 700,
+                    cursor: selectedOption && !submitting ? "pointer" : "not-allowed",
+                  }}
+                >
+                  {submitting ? "Submitting..." : "Confirm — I Made This Payment"}
+                </button>
+              </div>
+            )}
           </>
         )}
       </div>
