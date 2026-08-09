@@ -16,11 +16,12 @@ export default async function ExpertDashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, expert_level_id")
+    .select("full_name, role, expert_level_id, application_status")
     .eq("id", user.id)
     .single();
 
   if (profile?.role !== "expert") redirect("/dashboard");
+  if (profile?.application_status !== "approved") redirect("/dashboard/expert/apply");
 
   const { data: projects } = await supabase
     .from("projects")

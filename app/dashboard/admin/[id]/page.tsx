@@ -121,7 +121,8 @@ export default function AdminProjectDetail() {
     const { data: expertList } = await supabase
       .from("profiles")
       .select("id, full_name, email, expert_levels!profiles_expert_level_id_fkey(revenue_share)")
-      .eq("role", "expert");
+      .eq("role", "expert")
+      .eq("application_status", "approved");
     setExperts(
       (expertList || []).map((e: any) => ({
         id: e.id,

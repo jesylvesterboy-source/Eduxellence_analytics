@@ -13,6 +13,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<"client" | "expert">("client");
+  const [bio, setBio] = useState("");
+  const [expertise, setExpertise] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -29,6 +31,7 @@ export default function SignupPage() {
         data: {
           full_name: fullName,
           role: role,
+          ...(role === "expert" ? { bio, expertise } : {}),
         },
       },
     });
@@ -96,6 +99,33 @@ export default function SignupPage() {
               minLength={6}
               required
             />
+
+            {role === "expert" && (
+              <>
+                <textarea
+                  placeholder="Brief professional bio"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  rows={3}
+                  required
+                  style={{
+                    padding: "0.75rem 1rem",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
+                    fontSize: "0.9rem",
+                    fontFamily: "DM Sans, sans-serif",
+                    resize: "vertical",
+                  }}
+                />
+                <input
+                  type="text"
+                  placeholder="Areas of expertise (comma-separated, e.g. Data Analysis, GIS)"
+                  value={expertise}
+                  onChange={(e) => setExpertise(e.target.value)}
+                  required
+                />
+              </>
+            )}
 
             {error && <p className="auth-error">{error}</p>}
 

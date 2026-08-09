@@ -84,6 +84,20 @@ export default async function AdminDashboard() {
             >
               Promotions
             </Link>
+            <Link
+              href="/dashboard/admin/experts"
+              style={{
+                background: "#1a73e8",
+                color: "var(--white)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Applications
+            </Link>
             <NotificationBell />
             <LogoutButton />
           </div>
