@@ -12,6 +12,14 @@ type Payment = {
   created_at: string;
 };
 
+type Earnings = {
+  payment_id: string;
+  expert_share_pct: number | null;
+  expert_earnings: number;
+  eduxellence_share: number;
+  status: string;
+};
+
 export default function PaymentPanel({
   projectId,
   expertId,
@@ -27,6 +35,7 @@ export default function PaymentPanel({
   const [payments, setPayments] = useState<Payment[]>([]);
   const [amount, setAmount] = useState("");
   const [notes, setNotes] = useState("");
+  const [earnings, setEarnings] = useState<Earnings[]>([]);
 
   const loadPayments = useCallback(async () => {
     const { data } = await supabase
@@ -35,6 +44,12 @@ export default function PaymentPanel({
       .eq("project_id", projectId)
       .order("created_at", { ascending: false });
     setPayments(data || []);
+
+    const { data: earningsData } = await supabase
+      .from("expert_earnings")
+      .select("payment_id, expert_share_pct, expert_earnings, eduxellence_share, status")
+      .eq("project_id", projectId);
+    setEarnings(earningsData || []);
   }, [projectId, supabase]);
 
   useEffect(() => {
@@ -115,6 +130,18 @@ export default function PaymentPanel({
                 <strong>${p.amount}</strong>
                 <span style={{ textTransform: "capitalize", color: p.status === "released" ? "#1e8449" : "var(--gold-dark)" }}>{p.status}</span>
               </div>
+
+              {(() => {
+                const e = earnings.find((e) => e.payment_id === p.id);
+                if (!e) return null;
+                return (
+                  <div style={{ background: "var(--cream-dark)", borderRadius: "6px", padding: "0.6rem", marginTop: "0.4rem", marginBottom: "0.4rem", fontSize: "0.75rem" }}>
+                    <div>Expert share ({e.expert_share_pct ? Math.round(e.expert_share_pct * 100) : "fixed"}%): <strong>${e.expert_earnings.toFixed(2)}</strong> — <span style={{ textTransform: "capitalize" }}>{e.status}</span></div>
+                    <div style={{ color: "var(--muted)" }}>Eduxellence share: ${e.eduxellence_share.toFixed(2)}</div>
+                  </div>
+                );
+              })()}
+
               {p.status === "held" && (
                 <>
                   {!expertId && (

@@ -17,11 +17,19 @@ type PaymentRow = {
   projects: { title: string; client_id: string; expert_id: string | null; status: string } | null;
 };
 
+type Earnings = {
+  payment_id: string;
+  expert_share_pct: number | null;
+  expert_earnings: number;
+  eduxellence_share: number;
+};
+
 export default function AdminPaymentsPage() {
   const supabase = createClient();
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [proofLinks, setProofLinks] = useState<Record<string, string>>({});
   const [actingId, setActingId] = useState<string | null>(null);
+  const [earningsMap, setEarningsMap] = useState<Record<string, Earnings>>({});
 
   const loadPayments = useCallback(async () => {
     const { data, error } = await supabase
@@ -45,6 +53,15 @@ export default function AdminPaymentsPage() {
       }
     }
     setProofLinks(links);
+
+    const { data: earningsRows } = await supabase
+      .from("expert_earnings")
+      .select("payment_id, expert_share_pct, expert_earnings, eduxellence_share");
+    const map: Record<string, Earnings> = {};
+    (earningsRows || []).forEach((e) => {
+      if (e.payment_id) map[e.payment_id] = e;
+    });
+    setEarningsMap(map);
   }, [supabase]);
 
   useEffect(() => {
@@ -143,6 +160,14 @@ export default function AdminPaymentsPage() {
                   {p.status}
                 </span>
               </div>
+
+              {earningsMap[p.id] && (
+                <div style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.3rem" }}>
+                  Expert: ${earningsMap[p.id].expert_earnings.toFixed(2)}
+                  {earningsMap[p.id].expert_share_pct ? ` (${Math.round(earningsMap[p.id].expert_share_pct! * 100)}%)` : " (fixed fee)"}
+                  {" · "}Eduxellence: ${earningsMap[p.id].eduxellence_share.toFixed(2)}
+                </div>
+              )}
 
               {p.method === "bank_transfer" && p.verification_status === "pending" && (
                 <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "0.75rem" }}>
