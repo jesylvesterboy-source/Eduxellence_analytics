@@ -62,9 +62,30 @@ export default async function ExpertDashboard() {
 
   const pendingTotal = (earningsRows || []).filter((e) => e.status === "pending").reduce((s, e) => s + Number(e.expert_earnings), 0);
   const availableTotal = (earningsRows || []).filter((e) => e.status === "available").reduce((s, e) => s + Number(e.expert_earnings), 0);
+  const paidTotal = (earningsRows || []).filter((e) => e.status === "paid").reduce((s, e) => s + Number(e.expert_earnings), 0);
+  const lifetimeTotal = (earningsRows || []).reduce((s, e) => s + Number(e.expert_earnings), 0);
+
+  const { data: settingsRow } = await supabase
+    .from("platform_settings")
+    .select("mid_month_payout_day, end_month_payout_day")
+    .eq("id", 1)
+    .single();
+
+  const today = new Date();
+  const mid = settingsRow?.mid_month_payout_day ?? 15;
+  const end = settingsRow?.end_month_payout_day ?? 28;
+  let nextPaymentDate: Date;
+  if (today.getDate() < mid) {
+    nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), mid);
+  } else if (today.getDate() < end) {
+    nextPaymentDate = new Date(today.getFullYear(), today.getMonth(), end);
+  } else {
+    nextPaymentDate = new Date(today.getFullYear(), today.getMonth() + 1, mid);
+  }
 
   const statusLabels: Record<string, string> = {
     assigned: "Newly Assigned",
+    offered: "Offer Pending Your Response",
     in_progress: "In Progress",
     submitted: "Submitted — Awaiting Admin QA",
     qa_review: "Admin Reviewing",
@@ -72,6 +93,7 @@ export default async function ExpertDashboard() {
     revision: "Revision Requested",
     approved: "Approved by Client",
     completed: "Completed",
+    declined: "Declined",
   };
 
   return (
@@ -86,6 +108,34 @@ export default async function ExpertDashboard() {
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Your assigned projects</p>
           </div>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+            <Link
+              href="/dashboard/expert/payout-profile"
+              style={{
+                background: "var(--ink)",
+                color: "var(--white)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Payout Details
+            </Link>
+            <Link
+              href="/dashboard/expert/payouts"
+              style={{
+                background: "var(--gold)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Payment History
+            </Link>
             <NotificationBell />
             <LogoutButton />
           </div>
@@ -154,16 +204,15 @@ export default async function ExpertDashboard() {
           </div>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "1.5rem" }}>
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "var(--gold-dark)" }}>${pendingTotal.toLocaleString()}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Pending Earnings</div>
-          </div>
-          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", textAlign: "center" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 700, color: "#1e8449" }}>${availableTotal.toLocaleString()}</div>
-            <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Available Balance</div>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: "1rem", marginBottom: "1rem" }}>
+          <WalletCard label="Pending Earnings" value={`$${pendingTotal.toLocaleString()}`} color="var(--gold-dark)" />
+          <WalletCard label="Available for Payout" value={`$${availableTotal.toLocaleString()}`} color="#1e8449" />
+          <WalletCard label="Paid" value={`$${paidTotal.toLocaleString()}`} color="var(--muted)" />
+          <WalletCard label="Lifetime Earnings" value={`$${lifetimeTotal.toLocaleString()}`} color="var(--ink)" />
         </div>
+        <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "1.5rem" }}>
+          Next payment date: <strong>{nextPaymentDate.toLocaleDateString()}</strong>
+        </p>
 
         {!projects || projects.length === 0 ? (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
@@ -213,6 +262,15 @@ function ProgressRow({ label, value, target, decimal = false, suffix = "" }: { l
       <div style={{ fontWeight: 600, color: met ? "#1e8449" : "var(--ink)" }}>
         {display}{suffix} / {decimal ? target.toFixed(1) : target}{suffix}
       </div>
+    </div>
+  );
+}
+
+function WalletCard({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.1rem", textAlign: "center" }}>
+      <div style={{ fontSize: "1.3rem", fontWeight: 700, color }}>{value}</div>
+      <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{label}</div>
     </div>
   );
 }
