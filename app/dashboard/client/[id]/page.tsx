@@ -54,6 +54,7 @@ export default function ClientProjectDetail() {
   const [ratingInput, setRatingInput] = useState(0);
   const [commentInput, setCommentInput] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
+  const [consent, setConsent] = useState<boolean | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -308,6 +309,7 @@ export default function ClientProjectDetail() {
         client_id: userId,
         rating: ratingInput,
         comment: commentInput.trim() || null,
+        client_consent: consent,
       })
       .select("id, rating, comment")
       .single();
@@ -438,17 +440,30 @@ export default function ClientProjectDetail() {
                   rows={3}
                   style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem", resize: "vertical" }}
                 />
+                <div style={{ marginBottom: "0.75rem" }}>
+                  <p style={{ fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.4rem" }}>
+                    May Eduxellence use your feedback as a public testimonial?
+                  </p>
+                  <div style={{ display: "flex", gap: "1rem", fontSize: "0.85rem" }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <input type="radio" name="consent" checked={consent === true} onChange={() => setConsent(true)} /> Yes, you may publish it
+                    </label>
+                    <label style={{ display: "flex", alignItems: "center", gap: "0.4rem" }}>
+                      <input type="radio" name="consent" checked={consent === false} onChange={() => setConsent(false)} /> No, keep it private
+                    </label>
+                  </div>
+                </div>
                 <button
                   onClick={submitReview}
-                  disabled={ratingInput < 1 || submittingReview}
+                  disabled={ratingInput < 1 || submittingReview || consent === null}
                   style={{
-                    background: ratingInput < 1 ? "var(--border)" : "var(--gold)",
+                    background: ratingInput < 1 || consent === null ? "var(--border)" : "var(--gold)",
                     color: "var(--ink)",
                     border: "none",
                     padding: "0.5rem 1.25rem",
                     borderRadius: "6px",
                     fontWeight: 600,
-                    cursor: ratingInput < 1 ? "not-allowed" : "pointer",
+                    cursor: ratingInput < 1 || consent === null ? "not-allowed" : "pointer",
                   }}
                 >
                   {submittingReview ? "Submitting..." : "Submit Review"}

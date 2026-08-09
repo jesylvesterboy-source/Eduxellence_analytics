@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { createClient } from "@/lib/supabase/client";
 
 type Package = {
   tier: "Starter" | "Standard" | "Premium" | "Enterprise";
@@ -140,6 +141,36 @@ const CATEGORIES: Category[] = [
   },
 ];
 
+function CategoryTestimonials({ category }: { category: string }) {
+  const supabase = createClient();
+  const [items, setItems] = useState<{ client_name: string; quote: string; rating: number | null }[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("public_testimonials")
+      .select("client_name, quote, rating")
+      .eq("approved", true)
+      .eq("show_on_solutions", true)
+      .eq("service_category", category)
+      .order("created_at", { ascending: false })
+      .limit(3)
+      .then(({ data }) => setItems(data || []));
+  }, [category, supabase]);
+
+  if (items.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid var(--border)", display: "flex", flexDirection: "column", gap: "0.6rem" }}>
+      {items.map((t, i) => (
+        <div key={i} style={{ fontSize: "0.8rem" }}>
+          <span style={{ color: "var(--gold)" }}>{"★".repeat(t.rating || 5)}</span>{" "}
+          <em>&ldquo;{t.quote}&rdquo;</em> — <strong>{t.client_name}</strong>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function waLink(category: string, tier: string, name: string) {
   const text = "Hello, I would like to request a quote for " + name + " (" + tier + ") under " + category + ".";
   return "https://wa.me/2348135980311?text=" + encodeURIComponent(text);
@@ -250,18 +281,21 @@ export default function SolutionsPage() {
                 </div>
 
                 {!isCollapsed && (
-                  <div className="sol-packages">
-                    {cat.packages.map((pkg) => (
-                      <div key={pkg.tier} className={"sol-package" + (pkg.tier === "Enterprise" ? " enterprise" : "")}>
-                        <div className="sol-package-tier">{pkg.tier}</div>
-                        <div className="sol-package-name">{pkg.name}</div>
-                        <div className="sol-package-price">{pkg.price}</div>
-                        <a href={waLink(cat.title, pkg.tier, pkg.name)} target="_blank" rel="noopener noreferrer" className="sol-package-btn">
-                          Request Quote
-                        </a>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    <div className="sol-packages">
+                      {cat.packages.map((pkg) => (
+                        <div key={pkg.tier} className={"sol-package" + (pkg.tier === "Enterprise" ? " enterprise" : "")}>
+                          <div className="sol-package-tier">{pkg.tier}</div>
+                          <div className="sol-package-name">{pkg.name}</div>
+                          <div className="sol-package-price">{pkg.price}</div>
+                          <a href={waLink(cat.title, pkg.tier, pkg.name)} target="_blank" rel="noopener noreferrer" className="sol-package-btn">
+                            Request Quote
+                          </a>
+                        </div>
+                      ))}
+                    </div>
+                    <CategoryTestimonials category={cat.title} />
+                  </>
                 )}
               </div>
             );

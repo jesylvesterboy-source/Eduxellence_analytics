@@ -35,7 +35,7 @@ function TrustAndTestimonials() {
       if (data && data[0]) setMetrics(data[0]);
     });
     supabase
-      .from("testimonials")
+      .from("public_testimonials")
       .select("client_name, project_title, quote, rating")
       .eq("approved", true)
       .eq("show_on_homepage", true)
