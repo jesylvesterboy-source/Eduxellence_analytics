@@ -387,6 +387,15 @@ export default function AdminProjectDetail() {
         .eq("id", active.id);
       loadData();
     }
+
+    if (project?.expert_id) {
+      await supabase.from("notifications").insert({
+        user_id: project.expert_id,
+        title: "Delivered to Client",
+        body: `Your work on "${project.title}" has passed QA and been sent to the client for review.`,
+        link: `/dashboard/expert/${projectId}`,
+      });
+    }
   }
 
   if (!project) {

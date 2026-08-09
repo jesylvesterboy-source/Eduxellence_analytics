@@ -41,7 +41,7 @@ export default function ClientProjectDetail() {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [project, setProject] = useState<{ title: string; status: string; description: string | null } | null>(null);
+  const [project, setProject] = useState<{ title: string; status: string; description: string | null; expert_id: string | null } | null>(null);
   const [quotation, setQuotation] = useState<Quotation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
@@ -82,7 +82,7 @@ export default function ClientProjectDetail() {
 
     const { data: proj } = await supabase
       .from("projects")
-      .select("title, status, description")
+      .select("title, status, description, expert_id")
       .eq("id", projectId)
       .single();
     setProject(proj);
@@ -228,6 +228,31 @@ export default function ClientProjectDetail() {
   async function approveDelivery() {
     await supabase.from("projects").update({ status: "approved" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, status: "approved" } : prev));
+
+    const notifRows: { user_id: string; title: string; body: string; link: string }[] = [];
+
+    if (project?.expert_id) {
+      notifRows.push({
+        user_id: project.expert_id,
+        title: "Work Approved",
+        body: `The client approved your work on "${project.title}". Payment release is now in progress.`,
+        link: `/dashboard/expert/${projectId}`,
+      });
+    }
+
+    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+    admins?.forEach((a) =>
+      notifRows.push({
+        user_id: a.id,
+        title: "Client Approved Work",
+        body: `The client approved "${project?.title ?? "a project"}". Ready to release payment.`,
+        link: `/dashboard/admin/${projectId}`,
+      })
+    );
+
+    if (notifRows.length > 0) {
+      await supabase.from("notifications").insert(notifRows);
+    }
   }
 
   async function requestRevision() {
@@ -242,15 +267,30 @@ export default function ClientProjectDetail() {
     setProject((prev) => (prev ? { ...prev, status: "revision" } : prev));
 
     const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
-    if (admins && admins.length > 0) {
-      await supabase.from("notifications").insert(
-        admins.map((a) => ({
+    const notifRows: { user_id: string; title: string; body: string; link: string }[] = [];
+
+    if (admins) {
+      admins.forEach((a) =>
+        notifRows.push({
           user_id: a.id,
           title: "Revision Requested",
           body: `A revision was requested for "${project?.title ?? "a project"}".`,
           link: `/dashboard/admin/${projectId}`,
-        }))
+        })
       );
+    }
+
+    if (project?.expert_id) {
+      notifRows.push({
+        user_id: project.expert_id,
+        title: "Revision Requested (heads up)",
+        body: `The client requested a revision on "${project.title}". Admin will share the details shortly.`,
+        link: `/dashboard/expert/${projectId}`,
+      });
+    }
+
+    if (notifRows.length > 0) {
+      await supabase.from("notifications").insert(notifRows);
     }
 
     setRevisionNotes("");

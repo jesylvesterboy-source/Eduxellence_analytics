@@ -231,6 +231,19 @@ export default function ExpertProjectDetail() {
     }
     await supabase.from("projects").update({ status: "submitted" }).eq("id", projectId);
     setProject((prev) => (prev ? { ...prev, status: "submitted" } : prev));
+
+    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+    if (admins && admins.length > 0) {
+      await supabase.from("notifications").insert(
+        admins.map((a) => ({
+          user_id: a.id,
+          title: activeRevision ? "Revision Resubmitted" : "Submitted for QA",
+          body: `"${project?.title ?? "A project"}" has been submitted by the expert and is ready for quality review.`,
+          link: `/dashboard/admin/${projectId}`,
+        }))
+      );
+    }
+
     alert("Submitted to Admin for quality review.");
   }
 
