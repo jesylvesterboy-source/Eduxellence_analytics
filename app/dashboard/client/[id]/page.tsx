@@ -112,11 +112,11 @@ export default function ClientProjectDetail() {
       .single();
     setProject(proj);
 
+    // FIXED: Removed .eq("status", "approved") to fetch the latest quotation regardless of status
     const { data: quote } = await supabase
       .from("quotations")
       .select("id, amount, description, status, usd_to_ngn_rate")
       .eq("project_id", projectId)
-      .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
