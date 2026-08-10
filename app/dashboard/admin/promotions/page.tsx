@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
 
@@ -169,7 +170,9 @@ export default function AdminPromotionsPage() {
                   <div key={p.id} style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
                       <div>
-                        <strong>{p.expert_name || "Unknown Expert"}</strong>
+                        <Link href={`/dashboard/admin/experts/${p.expert_id}`} style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}>
+                          {p.expert_name || "Unknown Expert"}
+                        </Link>
                         <div style={{ fontSize: "0.85rem", color: "var(--muted)" }}>
                           {p.current_level_name} → {p.eligible_level_name} ({Math.round(p.eligible_revenue_share * 100)}% share)
                         </div>
@@ -229,7 +232,11 @@ export default function AdminPromotionsPage() {
                 <tbody>
                   {experts.map((e) => (
                     <tr key={e.expert_id} style={{ borderTop: "1px solid var(--border)" }}>
-                      <td style={tdStyle}>{e.full_name || "Unknown"}</td>
+                      <td style={tdStyle}>
+                        <Link href={`/dashboard/admin/experts/${e.expert_id}`} style={{ color: "var(--ink)", textDecoration: "none" }}>
+                          {e.full_name || "Unknown"}
+                        </Link>
+                      </td>
                       <td style={tdStyle}>{e.current_level_name} <span style={{ color: "var(--muted)" }}>({e.badge})</span></td>
                       <td style={tdStyle}>{Math.round(e.revenue_share * 100)}%</td>
                       <td style={tdStyle}>{e.projects_count}</td>

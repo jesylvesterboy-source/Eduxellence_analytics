@@ -14,8 +14,10 @@ type PaymentRow = {
   verification_status: string | null;
   created_at: string;
   project_id: string;
+  milestone_id: string | null;
   bank_currency: string | null;
   projects: { title: string; client_id: string; expert_id: string | null; status: string } | null;
+  milestones: { title: string } | null;
 };
 
 type Earnings = {
@@ -35,7 +37,7 @@ export default function AdminPaymentsPage() {
   const loadPayments = useCallback(async () => {
     const { data, error } = await supabase
       .from("payments")
-      .select("id, amount, status, method, transaction_reference, proof_of_payment_url, verification_status, created_at, project_id, bank_currency, projects(title, client_id, expert_id, status)")
+      .select("id, amount, status, method, transaction_reference, proof_of_payment_url, verification_status, created_at, project_id, milestone_id, bank_currency, projects(title, client_id, expert_id, status), milestones(title)")
       .order("created_at", { ascending: false });
 
     if (error) {
@@ -158,7 +160,15 @@ export default function AdminPaymentsPage() {
             <div key={p.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.5rem" }}>
                 <div>
-                  <div style={{ fontWeight: 600 }}>{p.projects?.title || "Unknown project"}</div>
+                  <div style={{ fontWeight: 600 }}>
+                    {p.projects?.title || "Unknown project"}
+                    {p.milestones?.title && (
+                      <span style={{ fontWeight: 400, color: "var(--muted)" }}>
+                        {" "}
+                        · Milestone: {p.milestones.title}
+                      </span>
+                    )}
+                  </div>
                   <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
                     ${p.amount} · {p.method === "bank_transfer" && p.bank_currency ? `bank transfer (${p.bank_currency})` : p.method || "unspecified"} · Ref: {p.transaction_reference || "—"}
                   </div>

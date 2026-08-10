@@ -136,6 +136,34 @@ export default async function ExpertDashboard() {
             >
               Payment History
             </Link>
+            <Link
+              href="/dashboard/expert/documents"
+              style={{
+                background: "var(--cream-dark)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Documents
+            </Link>
+            <Link
+              href="/dashboard/expert/capability-profile"
+              style={{
+                background: "var(--gold-light)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Capability
+            </Link>
             <NotificationBell />
             <LogoutButton />
           </div>

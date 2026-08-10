@@ -55,13 +55,37 @@ type Offer = {
   expert_name: string | null;
 };
 
+type Milestone = {
+  id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  due_date: string | null;
+  status: string;
+};
+
+type MatchResult = {
+  expert_id: string;
+  full_name: string;
+  level_name: string | null;
+  avg_rating: number;
+  completed_projects: number;
+  skills_score: number;
+  category_score: number;
+  experience_score: number;
+  performance_score: number;
+  availability_score: number;
+  history_score: number;
+  total_score: number;
+};
+
 export default function AdminProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
   const supabase = createClient();
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [project, setProject] = useState<{ title: string; status: string; description: string | null; budget: number | null; expert_id: string | null; client_id: string } | null>(null);
+  const [project, setProject] = useState<{ title: string; status: string; description: string | null; budget: number | null; expert_id: string | null; client_id: string; promotion_eligible: boolean } | null>(null);
   const [clientMessages, setClientMessages] = useState<Message[]>([]);
   const [expertMessages, setExpertMessages] = useState<Message[]>([]);
   const [fileLinks, setFileLinks] = useState<Record<string, string>>({});
@@ -79,6 +103,21 @@ export default function AdminProjectDetail() {
   const [sendingToExpert, setSendingToExpert] = useState(false);
   const [review, setReview] = useState<Review | null>(null);
   const [offers, setOffers] = useState<Offer[]>([]);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestoneTitle, setMilestoneTitle] = useState("");
+  const [milestoneDesc, setMilestoneDesc] = useState("");
+  const [milestoneAmount, setMilestoneAmount] = useState("");
+  const [milestoneDueDate, setMilestoneDueDate] = useState("");
+  const [milestonePayments, setMilestonePayments] = useState<Record<string, { id: string; status: string; verification_status: string }>>({});
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [skillsCatalog, setSkillsCatalog] = useState<{ id: number; category_id: number; name: string }[]>([]);
+  const [reqCategory, setReqCategory] = useState<number | "">("");
+  const [reqSkills, setReqSkills] = useState<number[]>([]);
+  const [reqExperience, setReqExperience] = useState("");
+  const [reqUrgency, setReqUrgency] = useState("");
+  const [reqSpecialization, setReqSpecialization] = useState("");
+  const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [matching, setMatching] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -104,7 +143,7 @@ export default function AdminProjectDetail() {
 
     const { data: proj } = await supabase
       .from("projects")
-      .select("title, status, description, budget, expert_id, client_id")
+      .select("title, status, description, budget, expert_id, client_id, promotion_eligible")
       .eq("id", projectId)
       .single();
     setProject(proj);
@@ -163,6 +202,42 @@ export default function AdminProjectDetail() {
       .eq("project_id", projectId)
       .order("offered_at", { ascending: false });
     setOffers((offerRows || []).map((o: any) => ({ ...o, expert_name: o.profiles?.full_name ?? null })));
+
+    const { data: milestoneRows } = await supabase
+      .from("milestones")
+      .select("id, title, description, amount, due_date, status")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    setMilestones(milestoneRows || []);
+
+    const { data: milestonePaymentRows } = await supabase
+      .from("payments")
+      .select("id, milestone_id, status, verification_status")
+      .eq("project_id", projectId)
+      .not("milestone_id", "is", null);
+    const paymentMap: Record<string, { id: string; status: string; verification_status: string }> = {};
+    (milestonePaymentRows || []).forEach((p) => {
+      if (p.milestone_id) paymentMap[p.milestone_id] = { id: p.id, status: p.status, verification_status: p.verification_status };
+    });
+    setMilestonePayments(paymentMap);
+
+    const { data: cats } = await supabase.from("solution_categories").select("id, name").order("display_order");
+    setCategories(cats || []);
+    const { data: skl } = await supabase.from("solution_skills").select("id, category_id, name");
+    setSkillsCatalog(skl || []);
+
+    const { data: projFull } = await supabase
+      .from("projects")
+      .select("required_category_id, required_skill_ids, required_experience_level, required_availability_urgency, specialization_notes")
+      .eq("id", projectId)
+      .single();
+    if (projFull) {
+      setReqCategory(projFull.required_category_id || "");
+      setReqSkills(projFull.required_skill_ids || []);
+      setReqExperience(projFull.required_experience_level || "");
+      setReqUrgency(projFull.required_availability_urgency || "");
+      setReqSpecialization(projFull.specialization_notes || "");
+    }
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -324,6 +399,19 @@ export default function AdminProjectDetail() {
     setFixedFee("");
     loadData();
     alert("Offer sent to expert.");
+
+    const { data: expertProfile } = await supabase.from("profiles").select("email").eq("id", selectedExpert).single();
+    if (expertProfile?.email) {
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: expertProfile.email,
+          subject: "New Project Offer — Eduxellence",
+          html: `<p>You have a new project offer for <strong>${project?.title ?? "a project"}</strong>. Log in to your dashboard to review the compensation and accept or decline.</p>`,
+        }),
+      });
+    }
   }
 
   async function sendRevisionToExpert() {
@@ -350,6 +438,19 @@ export default function AdminProjectDetail() {
       body: `A revision was requested on "${project.title}". Check the project for details.`,
       link: `/dashboard/expert/${projectId}`,
     });
+
+    const { data: expertEmail } = await supabase.from("profiles").select("email").eq("id", project.expert_id).single();
+    if (expertEmail?.email) {
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: expertEmail.email,
+          subject: "Revision Requested — Eduxellence",
+          html: `<p>A revision was requested on <strong>${project.title}</strong>. Log in to view the client's notes.</p>`,
+        }),
+      });
+    }
 
     setSendingToExpert(false);
     loadData();
@@ -390,6 +491,89 @@ export default function AdminProjectDetail() {
     if (error) { alert(error.message); return; }
     loadData();
     alert("Reassigned to new expert.");
+  }
+
+  async function cancelProject() {
+    if (!userId) return;
+    const reason = prompt("Reason for cancelling this project:");
+    if (!reason) return;
+    if (!confirm("Cancel this project? This cannot be undone.")) return;
+
+    const { error } = await supabase.rpc("fn_cancel_project", {
+      p_project_id: projectId,
+      p_admin_id: userId,
+      p_reason: reason,
+    });
+
+    if (error) {
+      alert("Could not cancel: " + error.message);
+      return;
+    }
+
+    setProject((prev) => (prev ? { ...prev, status: "cancelled" } : prev));
+    loadData();
+  }
+
+  async function createMilestone() {
+    if (!milestoneTitle.trim() || !milestoneAmount) return;
+    const { error } = await supabase.rpc("fn_create_milestone", {
+      p_project_id: projectId,
+      p_title: milestoneTitle,
+      p_description: milestoneDesc || null,
+      p_amount: parseFloat(milestoneAmount),
+      p_due_date: milestoneDueDate || null,
+    });
+    if (error) { alert(error.message); return; }
+    setMilestoneTitle("");
+    setMilestoneDesc("");
+    setMilestoneAmount("");
+    setMilestoneDueDate("");
+    loadData();
+  }
+
+  async function updateMilestoneStatus(id: string, status: string) {
+    const { error } = await supabase.rpc("fn_update_milestone_status", { p_milestone_id: id, p_status: status });
+    if (error) { alert(error.message); return; }
+    loadData();
+  }
+
+  async function releaseMilestone(id: string) {
+    if (!userId) return;
+    if (!confirm("Release this milestone payment to the expert?")) return;
+    const { error } = await supabase.rpc("fn_release_milestone_payment", { p_milestone_id: id, p_admin_id: userId });
+    if (error) { alert(error.message); return; }
+    loadData();
+  }
+
+  async function togglePromotionEligibility() {
+    if (!project) return;
+    const newValue = !project.promotion_eligible;
+    const { error } = await supabase.from("projects").update({ promotion_eligible: newValue }).eq("id", projectId);
+    if (error) {
+      alert("Could not update: " + error.message);
+      return;
+    }
+    setProject((prev) => (prev ? { ...prev, promotion_eligible: newValue } : prev));
+  }
+
+  async function saveRequirements() {
+    const { error } = await supabase.from("projects").update({
+      required_category_id: reqCategory || null,
+      required_skill_ids: reqSkills,
+      required_experience_level: reqExperience || null,
+      required_availability_urgency: reqUrgency || null,
+      specialization_notes: reqSpecialization || null,
+    }).eq("id", projectId);
+    if (error) { alert(error.message); return; }
+    alert("Requirements saved.");
+  }
+
+  async function findExperts() {
+    setMatching(true);
+    const { data, error } = await supabase.rpc("fn_match_experts_for_project", { p_project_id: projectId, p_limit: 10 });
+    setMatching(false);
+    if (error) { alert(error.message); return; }
+    setMatches(data || []);
   }
 
   async function markQaReview() {
@@ -458,6 +642,15 @@ export default function AdminProjectDetail() {
     clientQuotationInput && selectedExpertObj?.revenue_share
       ? (parseFloat(clientQuotationInput) * selectedExpertObj.revenue_share).toFixed(2)
       : null;
+
+  const smallInput: React.CSSProperties = {
+    width: "100%",
+    padding: "0.5rem",
+    border: "1px solid var(--border)",
+    borderRadius: "6px",
+    fontSize: "0.8rem",
+    marginBottom: "0.5rem",
+  };
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
@@ -667,6 +860,63 @@ export default function AdminProjectDetail() {
             </div>
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Define Matching Requirements</div>
+              <select value={reqCategory} onChange={(e) => { setReqCategory(e.target.value ? Number(e.target.value) : ""); setReqSkills([]); }} style={smallInput}>
+                <option value="">Solution category...</option>
+                {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              </select>
+              {reqCategory && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem", marginBottom: "0.5rem" }}>
+                  {skillsCatalog.filter((s) => s.category_id === reqCategory).map((s) => (
+                    <label key={s.id} style={{ fontSize: "0.75rem", background: reqSkills.includes(s.id) ? "var(--gold-light)" : "var(--cream-dark)", padding: "0.25rem 0.6rem", borderRadius: "999px", cursor: "pointer" }}>
+                      <input type="checkbox" checked={reqSkills.includes(s.id)} onChange={() => setReqSkills(reqSkills.includes(s.id) ? reqSkills.filter((x) => x !== s.id) : [...reqSkills, s.id])} style={{ display: "none" }} />
+                      {s.name}
+                    </label>
+                  ))}
+                </div>
+              )}
+              <select value={reqExperience} onChange={(e) => setReqExperience(e.target.value)} style={smallInput}>
+                <option value="">Experience required...</option>
+                <option value="less_than_1">Less than 1 year</option>
+                <option value="1_2">1–2 years</option>
+                <option value="3_5">3–5 years</option>
+                <option value="6_10">6–10 years</option>
+                <option value="10_plus">10+ years</option>
+              </select>
+              <input placeholder="Urgency (e.g. within 48 hours)" value={reqUrgency} onChange={(e) => setReqUrgency(e.target.value)} style={smallInput} />
+              <input placeholder="Specialization notes" value={reqSpecialization} onChange={(e) => setReqSpecialization(e.target.value)} style={smallInput} />
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button onClick={saveRequirements} style={{ flex: 1, background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.5rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>Save Requirements</button>
+                <button onClick={findExperts} disabled={matching} style={{ flex: 1, background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.5rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
+                  {matching ? "Matching..." : "Find Recommended Experts"}
+                </button>
+              </div>
+
+              {matches.length > 0 && (
+                <div style={{ marginTop: "0.75rem", display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+                  {matches.map((m, i) => (
+                    <div key={m.expert_id} style={{ border: "1px solid var(--gold)", borderRadius: "8px", padding: "0.6rem" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.8rem" }}>
+                        <strong>{i + 1}. {m.full_name}</strong>
+                        <span style={{ color: "var(--gold-dark)", fontWeight: 700 }}>{m.total_score}% Match</span>
+                      </div>
+                      <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.level_name} · ★{m.avg_rating} · {m.completed_projects} projects</div>
+                      <div style={{ fontSize: "0.68rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+                        Skills {m.skills_score}/35 · Category {m.category_score}/20 · Exp {m.experience_score}/15 · Perf {m.performance_score}/10 · Avail {m.availability_score}/10 · History {m.history_score}/10
+                      </div>
+                      <button
+                        onClick={() => { setSelectedExpert(m.expert_id); alert(`${m.full_name} selected — scroll to "Offer Project to Expert" to send the offer.`); }}
+                        style={{ marginTop: "0.4rem", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", cursor: "pointer" }}
+                      >
+                        Select for Offer
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Quotation → Expert Fee</div>
               <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginBottom: "0.75rem" }}>
                 Enter the amount you&apos;ve agreed with the client. The system will auto-calculate the expert&apos;s share based on their revenue-share level.
@@ -773,6 +1023,48 @@ export default function AdminProjectDetail() {
               </div>
             )}
 
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Milestones</div>
+
+              {milestones.map((m) => {
+                const payment = milestonePayments[m.id];
+                return (
+                  <div key={m.id} style={{ border: "1px solid var(--border)", borderRadius: "8px", padding: "0.75rem", marginBottom: "0.6rem" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.85rem" }}>
+                      <strong>{m.title}</strong>
+                      <span>${m.amount}</span>
+                    </div>
+                    {m.description && <p style={{ fontSize: "0.75rem", color: "var(--muted)", margin: "0.2rem 0" }}>{m.description}</p>}
+                    <div style={{ fontSize: "0.75rem", color: "var(--gold-dark)", fontWeight: 600, textTransform: "capitalize", marginTop: "0.3rem" }}>{m.status.replace("_", " ")}</div>
+                    {payment && (
+                      <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+                        Payment: {payment.status} {payment.verification_status === "pending" && "(needs verification — see Payments page)"}
+                      </div>
+                    )}
+                    <div style={{ display: "flex", gap: "0.4rem", marginTop: "0.5rem", flexWrap: "wrap" }}>
+                      {m.status === "pending" && (
+                        <button onClick={() => updateMilestoneStatus(m.id, "in_progress")} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", cursor: "pointer" }}>Mark In Progress</button>
+                      )}
+                      {m.status === "in_progress" && (
+                        <button onClick={() => updateMilestoneStatus(m.id, "completed")} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", cursor: "pointer" }}>Mark Completed</button>
+                      )}
+                      {m.status === "completed" && payment?.status === "held" && payment.verification_status === "verified" && (
+                        <button onClick={() => releaseMilestone(m.id)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.3rem 0.7rem", borderRadius: "6px", fontSize: "0.72rem", fontWeight: 600, cursor: "pointer" }}>Release Payment</button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+
+              <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
+                <input placeholder="Milestone title" value={milestoneTitle} onChange={(e) => setMilestoneTitle(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
+                <input placeholder="Description (optional)" value={milestoneDesc} onChange={(e) => setMilestoneDesc(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
+                <input type="number" placeholder="Amount (USD)" value={milestoneAmount} onChange={(e) => setMilestoneAmount(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
+                <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
+                <button onClick={createMilestone} style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Add Milestone</button>
+              </div>
+            </div>
+
             <PaymentPanel
               projectId={projectId}
               expertId={project.expert_id}
@@ -800,6 +1092,19 @@ export default function AdminProjectDetail() {
               <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
                 <button onClick={markQaReview} style={actionBtnStyle}>Mark: In QA Review</button>
                 <button onClick={markDelivered} style={actionBtnStyle}>Mark: Delivered to Client</button>
+                {project.status !== "completed" && project.status !== "cancelled" && (
+                  <button onClick={cancelProject} style={{ ...actionBtnStyle, color: "#c0392b", borderColor: "#c0392b" }}>
+                    Cancel Project
+                  </button>
+                )}
+                <button onClick={togglePromotionEligibility} style={actionBtnStyle}>
+                  {project.promotion_eligible ? "Exclude from Promotion Calculations" : "✓ Re-include in Promotion Calculations"}
+                </button>
+                {!project.promotion_eligible && (
+                  <p style={{ fontSize: "0.7rem", color: "#c0392b", marginTop: "-0.25rem" }}>
+                    This project is currently excluded — it won't count toward the expert's completed projects, reviews, or on-time rate.
+                  </p>
+                )}
               </div>
             </div>
           </div>

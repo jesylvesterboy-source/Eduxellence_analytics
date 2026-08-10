@@ -2,8 +2,10 @@
 
 import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
+import Script from "next/script";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
+import PaymentMethodSelector from "@/components/payments/PaymentMethodSelector";
 
 type Message = {
   id: string;
@@ -19,6 +21,7 @@ type Quotation = {
   amount: number;
   description: string | null;
   status: string;
+  usd_to_ngn_rate: number | null;
 };
 
 type RevisionRequest = {
@@ -34,12 +37,22 @@ type Review = {
   comment: string | null;
 };
 
+type Milestone = {
+  id: string;
+  title: string;
+  description: string | null;
+  amount: number;
+  due_date: string | null;
+  status: string;
+};
+
 export default function ClientProjectDetail() {
   const params = useParams();
   const projectId = params.id as string;
   const supabase = createClient();
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [project, setProject] = useState<{ title: string; status: string; description: string | null; expert_id: string | null } | null>(null);
   const [quotation, setQuotation] = useState<Quotation | null>(null);
@@ -55,6 +68,8 @@ export default function ClientProjectDetail() {
   const [commentInput, setCommentInput] = useState("");
   const [submittingReview, setSubmittingReview] = useState(false);
   const [consent, setConsent] = useState<boolean | null>(null);
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
+  const [milestonePayments, setMilestonePayments] = useState<Record<string, { status: string; verification_status: string; transaction_reference: string | null }>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -78,7 +93,8 @@ export default function ClientProjectDetail() {
     if (!user) return;
     setUserId(user.id);
 
-    const { data: myProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
+    const { data: myProfile } = await supabase.from("profiles").select("email, role").eq("id", user.id).single();
+    setUserEmail(myProfile?.email || user.email || "");
     setIsAdmin(myProfile?.role === "admin");
 
     const { data: proj } = await supabase
@@ -90,8 +106,9 @@ export default function ClientProjectDetail() {
 
     const { data: quote } = await supabase
       .from("quotations")
-      .select("id, amount, description, status")
+      .select("id, amount, description, status, usd_to_ngn_rate")
       .eq("project_id", projectId)
+      .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -119,6 +136,24 @@ export default function ClientProjectDetail() {
       .eq("project_id", projectId)
       .maybeSingle();
     setReview(existingReview);
+
+    const { data: milestoneRows } = await supabase
+      .from("milestones")
+      .select("id, title, description, amount, due_date, status")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: true });
+    setMilestones(milestoneRows || []);
+
+    const { data: mPayments } = await supabase
+      .from("payments")
+      .select("milestone_id, status, verification_status, transaction_reference")
+      .eq("project_id", projectId)
+      .not("milestone_id", "is", null);
+    const map: Record<string, { status: string; verification_status: string; transaction_reference: string | null }> = {};
+    (mPayments || []).forEach((p) => {
+      if (p.milestone_id) map[p.milestone_id] = { status: p.status, verification_status: p.verification_status, transaction_reference: p.transaction_reference };
+    });
+    setMilestonePayments(map);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -327,6 +362,9 @@ export default function ClientProjectDetail() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
+      <Script src="https://checkout.flutterwave.com/v3.js" strategy="afterInteractive" />
+      <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
+
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
         <BackHomeBar backHref="/dashboard/client" backLabel="Back to Dashboard" />
 
@@ -357,6 +395,61 @@ export default function ClientProjectDetail() {
             <a href={`/dashboard/client/${projectId}/payment`} style={{ display: "inline-block", background: "var(--gold)", color: "var(--ink)", padding: "0.75rem 1.5rem", borderRadius: "6px", fontWeight: 600, textDecoration: "none" }}>
               Proceed to Payment
             </a>
+          </div>
+        )}
+
+        {milestones.length > 0 && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Project Milestones</div>
+            {milestones.map((m) => {
+              const payment = milestonePayments[m.id];
+              return (
+                <div key={m.id} style={{ borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem", marginBottom: "0.75rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9rem" }}>
+                    <strong>{m.title}</strong>
+                    <span>${m.amount}</span>
+                  </div>
+                  {m.description && <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0.3rem 0" }}>{m.description}</p>}
+                  <div style={{ fontSize: "0.75rem", color: "var(--gold-dark)", fontWeight: 600, textTransform: "capitalize" }}>{m.status.replace("_", " ")}</div>
+
+                  {!payment && quotation?.usd_to_ngn_rate !== undefined && (
+                    <div style={{ marginTop: "0.75rem" }}>
+                      <PaymentMethodSelector
+                        amountUsd={m.amount}
+                        ngnRate={quotation?.usd_to_ngn_rate ?? null}
+                        userEmail={userEmail}
+                        bankReference={`EDUX-MS-${m.id}`}
+                        existingPayment={milestonePayments[m.id] || null}
+                        onSubmitPayment={async (method, bankCurrency, reference, proofFile) => {
+                          let proofUrl: string | null = null;
+                          if (proofFile) {
+                            const filePath = `${projectId}/milestone-proof-${Date.now()}-${proofFile.name}`;
+                            const { error: uploadError } = await supabase.storage.from("project-files").upload(filePath, proofFile);
+                            if (!uploadError) proofUrl = filePath;
+                          }
+                          const { error } = await supabase.rpc("fn_confirm_milestone_payment", {
+                            p_milestone_id: m.id,
+                            p_method: method,
+                            p_bank_currency: bankCurrency,
+                            p_reference: reference,
+                            p_proof_url: proofUrl,
+                          });
+                          if (error) return { error: error.message };
+                          loadData();
+                          return {};
+                        }}
+                      />
+                    </div>
+                  )}
+                  {payment && (
+                    <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.4rem" }}>
+                      Payment {payment.status} — {payment.verification_status}
+                      {payment.transaction_reference && ` · Ref: ${payment.transaction_reference}`}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         )}
 

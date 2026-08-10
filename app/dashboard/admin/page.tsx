@@ -31,6 +31,7 @@ export default async function AdminDashboard() {
   const { data: stats } = await supabase.from("admin_stats").select("*").single();
 
   await supabase.rpc("fn_check_overdue_offers");
+  await supabase.rpc("fn_check_document_expiry");
 
   const statusLabels: Record<string, string> = {
     new: "New Request",
@@ -127,6 +128,34 @@ export default async function AdminDashboard() {
               }}
             >
               Recommendations
+            </Link>
+            <Link
+              href="/dashboard/admin/skills"
+              style={{
+                background: "var(--cream-dark)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Skills
+            </Link>
+            <Link
+              href="/dashboard/admin/credential-types"
+              style={{
+                background: "var(--gold-light)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              Credential Types
             </Link>
             <NotificationBell />
             <LogoutButton />

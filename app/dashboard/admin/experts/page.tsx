@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
 
@@ -17,12 +18,32 @@ type Applicant = {
   submitted_at: string | null;
 };
 
+type Doc = {
+  id: string;
+  doc_type: string;
+  label: string | null;
+  file_path: string;
+  verification_status: string;
+  expiry_date: string | null;
+  no_expiry: boolean;
+  issuing_organization: string | null;
+  issue_date: string | null;
+};
+
+const statusColor: Record<string, string> = {
+  verified: "#1e8449",
+  pending_verification: "var(--gold-dark)",
+  rejected: "#c0392b",
+  expired: "var(--muted)",
+};
+
 export default function AdminExpertsPage() {
   const supabase = createClient();
   const [adminId, setAdminId] = useState<string | null>(null);
   const [applicants, setApplicants] = useState<Applicant[]>([]);
   const [docLinks, setDocLinks] = useState<Record<string, string>>({});
   const [actingId, setActingId] = useState<string | null>(null);
+  const [expertDocs, setExpertDocs] = useState<Record<string, Doc[]>>({});
 
   const loadApplicants = useCallback(async () => {
     const {
@@ -50,6 +71,16 @@ export default function AdminExpertsPage() {
       }
     }
     setDocLinks(links);
+
+    const { data: docRows } = await supabase
+      .from("expert_documents")
+      .select("id, expert_id, doc_type, label, file_path, verification_status, expiry_date, no_expiry, issuing_organization, issue_date");
+    const grouped: Record<string, Doc[]> = {};
+    (docRows || []).forEach((d: any) => {
+      if (!grouped[d.expert_id]) grouped[d.expert_id] = [];
+      grouped[d.expert_id].push(d);
+    });
+    setExpertDocs(grouped);
   }, [supabase]);
 
   useEffect(() => {
@@ -78,6 +109,73 @@ export default function AdminExpertsPage() {
       alert("Failed: " + error.message);
       return;
     }
+
+    const { data: applicantRow } = await supabase.from("profiles").select("email").eq("id", expertId).single();
+    if (applicantRow?.email) {
+      const subject =
+        decision === "approved"
+          ? "Application Approved — Welcome to Eduxellence!"
+          : decision === "rejected"
+          ? "Application Update — Eduxellence"
+          : "Additional Information Needed — Eduxellence";
+      const body =
+        decision === "approved"
+          ? "Congratulations! Your expert application has been approved. Log in to access your dashboard."
+          : decision === "rejected"
+          ? `Your application was not approved at this time.${reason ? " Reason: " + reason : ""}`
+          : `Please provide additional information for your application.${reason ? " Details: " + reason : ""}`;
+      fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: applicantRow.email, subject, html: `<p>${body}</p>` }),
+      });
+    }
+
+    loadApplicants();
+  }
+
+  async function viewAndDecideDocument(doc: Doc) {
+    const { data } = await supabase.storage.from("expert-applications").createSignedUrl(doc.file_path, 60 * 10);
+    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+  }
+
+  async function decideDocument(docId: string, decision: "verified" | "rejected") {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    let reason: string | null = null;
+    let overrideExpiry: string | null = null;
+    let overrideNoExpiry: boolean | null = null;
+
+    if (decision === "rejected") {
+      reason = prompt("Reason:") ?? null;
+      if (reason === null) return;
+    } else {
+      const useOverride = confirm("Override the expiry date shown on the actual document? (Cancel = keep as submitted)");
+      if (useOverride) {
+        const noExp = confirm("Does this document have no expiry? (Cancel = it does expire)");
+        if (noExp) {
+          overrideNoExpiry = true;
+        } else {
+          const dateStr = prompt("Enter the correct expiry date (YYYY-MM-DD):");
+          if (dateStr) overrideExpiry = dateStr;
+        }
+      }
+    }
+
+    const { error } = await supabase.rpc("fn_verify_document", {
+      p_document_id: docId,
+      p_admin_id: user.id,
+      p_decision: decision,
+      p_reason: reason,
+      p_override_expiry_date: overrideExpiry,
+      p_override_no_expiry: overrideNoExpiry,
+    });
+    if (error) {
+      alert(error.message);
+      return;
+    }
     loadApplicants();
   }
 
@@ -99,7 +197,9 @@ export default function AdminExpertsPage() {
               <div key={a.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "0.75rem" }}>
                   <div>
-                    <strong>{a.full_name || "Unknown"}</strong>
+                    <Link href={`/dashboard/admin/experts/${a.id}`} style={{ color: "var(--ink)", textDecoration: "none", fontWeight: 600 }}>
+                      {a.full_name || "Unknown"}
+                    </Link>
                     <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>{a.email}</div>
                   </div>
                   <span style={{ fontSize: "0.75rem", fontWeight: 600, textTransform: "capitalize", color: "var(--gold-dark)" }}>
@@ -114,10 +214,33 @@ export default function AdminExpertsPage() {
                   </p>
                 )}
 
-                <div style={{ display: "flex", gap: "1rem", fontSize: "0.8rem", marginBottom: "1rem" }}>
-                  {docLinks[`${a.id}-cv`] && <a href={docLinks[`${a.id}-cv`]} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold-dark)", fontWeight: 600 }}>View CV</a>}
-                  {docLinks[`${a.id}-id`] && <a href={docLinks[`${a.id}-id`]} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold-dark)", fontWeight: 600 }}>View ID</a>}
-                  {docLinks[`${a.id}-photo`] && <a href={docLinks[`${a.id}-photo`]} target="_blank" rel="noopener noreferrer" style={{ color: "var(--gold-dark)", fontWeight: 600 }}>View Photo</a>}
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", marginBottom: "1rem" }}>
+                  {(expertDocs[a.id] || []).map((d) => (
+                    <div key={d.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem", background: "var(--cream-dark)", padding: "0.4rem 0.7rem", borderRadius: "6px" }}>
+                      <div>
+                        <span style={{ textTransform: "capitalize" }}>{d.label || d.doc_type.replace("_", " ")}</span>
+                        {d.issuing_organization && (
+                          <span style={{ fontSize: "0.7rem", color: "var(--muted)", marginLeft: "0.4rem" }}>
+                            · {d.issuing_organization}
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "0.7rem", fontWeight: 600, color: statusColor[d.verification_status] }}>
+                          {d.verification_status.replace("_", " ")}
+                          {d.expiry_date && !d.no_expiry && ` · Expires ${new Date(d.expiry_date).toLocaleDateString()}`}
+                          {d.no_expiry && " · No Expiry"}
+                        </span>
+                        <button onClick={() => viewAndDecideDocument(d)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>View</button>
+                        {d.verification_status === "pending_verification" && (
+                          <>
+                            <button onClick={() => decideDocument(d.id, "verified")} style={{ background: "#1e8449", color: "white", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>✓</button>
+                            <button onClick={() => decideDocument(d.id, "rejected")} style={{ background: "#c0392b", color: "white", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>✗</button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 <div style={{ display: "flex", gap: "0.6rem" }}>
