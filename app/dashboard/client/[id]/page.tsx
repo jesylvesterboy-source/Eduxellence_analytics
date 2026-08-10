@@ -72,6 +72,14 @@ export default function ClientProjectDetail() {
   const [milestonePayments, setMilestonePayments] = useState<Record<string, { status: string; verification_status: string; transaction_reference: string | null }>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // ADDED: Cancellation request state
+  const [showCancelForm, setShowCancelForm] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelExplanation, setCancelExplanation] = useState("");
+  const [workCommenced, setWorkCommenced] = useState(false);
+  const [cancellationRequest, setCancellationRequest] = useState<{ id: string; status: string; reason: string; created_at: string; admin_notes: string | null } | null>(null);
+  const [resolutions, setResolutions] = useState<{ refund_amount: number; expert_compensation_amount: number; resolution_type: string }[]>([]);
+
   const resolveFileLinks = useCallback(
     async (msgs: Message[]) => {
       const links: Record<string, string> = {};
@@ -154,6 +162,24 @@ export default function ClientProjectDetail() {
       if (p.milestone_id) map[p.milestone_id] = { status: p.status, verification_status: p.verification_status, transaction_reference: p.transaction_reference };
     });
     setMilestonePayments(map);
+
+    // ADDED: Load cancellation request data
+    const { data: cancelReq } = await supabase
+      .from("cancellation_requests")
+      .select("id, status, reason, created_at, admin_notes")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setCancellationRequest(cancelReq);
+
+    if (cancelReq && ["approved", "partially_approved"].includes(cancelReq.status)) {
+      const { data: res } = await supabase
+        .from("cancellation_resolutions")
+        .select("refund_amount, expert_compensation_amount, resolution_type")
+        .eq("cancellation_request_id", cancelReq.id);
+      setResolutions(res || []);
+    }
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -363,6 +389,26 @@ export default function ClientProjectDetail() {
     setReview(data);
   }
 
+  // ADDED: Submit cancellation request function
+  async function submitCancellationRequest() {
+    if (!cancelReason) {
+      alert("Please select a reason.");
+      return;
+    }
+    const { error } = await supabase.rpc("fn_request_cancellation", {
+      p_project_id: projectId,
+      p_reason: cancelReason,
+      p_explanation: cancelExplanation || null,
+      p_work_commenced: workCommenced,
+    });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    setShowCancelForm(false);
+    loadData();
+  }
+
   if (!project) {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
@@ -381,6 +427,70 @@ export default function ClientProjectDetail() {
         <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
           Status: <strong style={{ textTransform: "capitalize" }}>{project.status.replace("_", " ")}</strong>
         </p>
+
+        {/* ADDED: Cancellation request UI - Active request status */}
+        {cancellationRequest && !["rejected"].includes(cancellationRequest.status) && (
+          <div style={{ background: "var(--white)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, marginBottom: "0.4rem" }}>Cancellation Request</div>
+            <p style={{ fontSize: "0.85rem" }}>Status: <strong style={{ textTransform: "capitalize" }}>{cancellationRequest.status.replace("_", " ")}</strong></p>
+            <p style={{ fontSize: "0.85rem", color: "var(--muted)" }}>Reason: {cancellationRequest.reason}</p>
+            <p style={{ fontSize: "0.75rem", color: "var(--muted)" }}>Submitted {new Date(cancellationRequest.created_at).toLocaleString()}</p>
+            {resolutions.length > 0 && (
+              <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px solid var(--border)" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 600, marginBottom: "0.4rem" }}>Resolution</div>
+                {resolutions.map((r, i) => (
+                  <p key={i} style={{ fontSize: "0.8rem" }}>
+                    {r.resolution_type.replace("_", " ")} — Refund: ${r.refund_amount} {r.expert_compensation_amount > 0 && `· Expert compensation: $${r.expert_compensation_amount}`}
+                  </p>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ADDED: Cancellation request UI - Rejected status */}
+        {cancellationRequest?.status === "rejected" && (
+          <div style={{ background: "var(--white)", border: "1px solid #c0392b", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+            <div style={{ fontWeight: 600, color: "#c0392b" }}>Cancellation Request Declined</div>
+            {cancellationRequest.admin_notes && <p style={{ fontSize: "0.85rem", marginTop: "0.4rem" }}>{cancellationRequest.admin_notes}</p>}
+          </div>
+        )}
+
+        {/* ADDED: Cancellation request UI - Request form */}
+        {!cancellationRequest && project.status !== "completed" && project.status !== "cancelled" && (
+          <div style={{ marginBottom: "1.5rem" }}>
+            {!showCancelForm ? (
+              <button onClick={() => setShowCancelForm(true)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.5rem 1.1rem", borderRadius: "6px", fontSize: "0.85rem", cursor: "pointer" }}>
+                Request Project Cancellation
+              </button>
+            ) : (
+              <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
+                <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Request Cancellation</div>
+                <select value={cancelReason} onChange={(e) => setCancelReason(e.target.value)} style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.6rem" }}>
+                  <option value="">Select a reason...</option>
+                  <option>No longer need the service</option>
+                  <option>Project requirements changed</option>
+                  <option>Budget changed</option>
+                  <option>Deadline changed</option>
+                  <option>Expert availability issue</option>
+                  <option>Quality concerns</option>
+                  <option>Communication issue</option>
+                  <option>Project not progressing as expected</option>
+                  <option>Duplicate request</option>
+                  <option>Other</option>
+                </select>
+                <textarea placeholder="Optional explanation" value={cancelExplanation} onChange={(e) => setCancelExplanation(e.target.value)} rows={3} style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.6rem", resize: "vertical" }} />
+                <label style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontSize: "0.8rem", marginBottom: "0.75rem" }}>
+                  <input type="checkbox" checked={workCommenced} onChange={(e) => setWorkCommenced(e.target.checked)} /> Work has already commenced on this project
+                </label>
+                <div style={{ display: "flex", gap: "0.6rem" }}>
+                  <button onClick={submitCancellationRequest} style={{ background: "#c0392b", color: "white", border: "none", padding: "0.5rem 1.1rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}>Submit Request</button>
+                  <button onClick={() => setShowCancelForm(false)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.5rem 1.1rem", borderRadius: "6px", fontSize: "0.85rem", cursor: "pointer" }}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {quotation && quotation.status === "pending" && (
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>

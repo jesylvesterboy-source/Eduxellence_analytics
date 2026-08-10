@@ -666,6 +666,13 @@ export default function AdminProjectDetail() {
               Status: <strong style={{ textTransform: "capitalize" }}>{project.status.replace("_", " ")}</strong>
             </p>
 
+            {/* ADDED: Link to cancellation request page when project status is cancellation_requested */}
+            {project.status === "cancellation_requested" && (
+              <a href={`/dashboard/admin/${projectId}/cancellation`} style={{ display: "inline-block", background: "#c0392b", color: "white", padding: "0.5rem 1rem", borderRadius: "6px", fontSize: "0.85rem", fontWeight: 600, textDecoration: "none", marginBottom: "1rem" }}>
+                ⚠ Review Cancellation Request
+              </a>
+            )}
+
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Client Request</div>
               {project.description && <p style={{ fontSize: "0.85rem", marginBottom: "0.5rem" }}>{project.description}</p>}
