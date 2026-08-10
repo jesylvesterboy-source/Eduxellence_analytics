@@ -21,13 +21,16 @@ type Doc = {
   uploaded_at: string;
   expiry_date: string | null;
   no_expiry: boolean;
+  lifecycle_status: string;
+  superseded_by: string | null;
+  replaced_at: string | null;
 };
 
 const statusColor: Record<string, string> = {
   verified: "#1e8449",
   pending_verification: "var(--gold-dark)",
   rejected: "#c0392b",
-  expired: "var(--muted)",
+  expired: "#c0392b",
 };
 
 export default function ExpertDocumentsPage() {
@@ -44,6 +47,7 @@ export default function ExpertDocumentsPage() {
   const [issueDate, setIssueDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [noExpiry, setNoExpiry] = useState(false);
+  const [replacingId, setReplacingId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const {
@@ -52,7 +56,7 @@ export default function ExpertDocumentsPage() {
     if (!user) return;
     const { data } = await supabase
       .from("expert_documents")
-      .select("id, doc_type, label, file_path, file_name, verification_status, uploaded_at, expiry_date, no_expiry")
+      .select("id, doc_type, label, file_path, file_name, verification_status, uploaded_at, expiry_date, no_expiry, lifecycle_status, superseded_by, replaced_at")
       .eq("expert_id", user.id)
       .order("uploaded_at", { ascending: false });
     setDocs(data || []);
@@ -78,7 +82,31 @@ export default function ExpertDocumentsPage() {
     }
   }
 
-  async function upload() {
+  async function deletePending(docId: string) {
+    if (!confirm("Delete this document? This cannot be undone.")) return;
+    const doc = docs.find((d) => d.id === docId);
+    const { error } = await supabase.rpc("fn_delete_pending_document", { p_document_id: docId });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    if (doc) await supabase.storage.from("expert-applications").remove([doc.file_path]);
+    load();
+  }
+
+  async function requestRemoval(docId: string) {
+    const reason = prompt("Why are you requesting removal of this credential?");
+    if (!reason) return;
+    const { error } = await supabase.rpc("fn_request_document_removal", { p_document_id: docId, p_reason: reason });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    alert("Removal request sent to Admin.");
+    load();
+  }
+
+  async function uploadOrReplace() {
     if (!file) {
       alert("Select a file first.");
       return;
@@ -107,22 +135,30 @@ export default function ExpertDocumentsPage() {
       return;
     }
 
-    const { error } = await supabase.rpc("fn_upload_document", {
-      p_doc_type: docType,
-      p_label: label || null,
-      p_file_path: path,
-      p_file_name: file.name,
-      p_file_size: file.size,
-      p_credential_type_id: credentialTypeId || null,
-      p_issuing_organization: issuingOrg || null,
-      p_issue_date: issueDate || null,
-      p_expiry_date: expiryDate || null,
-      p_no_expiry: noExpiry,
-    });
+    const { error } = replacingId
+      ? await supabase.rpc("fn_request_document_replacement", {
+          p_old_document_id: replacingId,
+          p_new_file_path: path,
+          p_new_file_name: file.name,
+          p_new_file_size: file.size,
+          p_label: label || null,
+        })
+      : await supabase.rpc("fn_upload_document", {
+          p_doc_type: docType,
+          p_label: label || null,
+          p_file_path: path,
+          p_file_name: file.name,
+          p_file_size: file.size,
+          p_credential_type_id: credentialTypeId || null,
+          p_issuing_organization: issuingOrg || null,
+          p_issue_date: issueDate || null,
+          p_expiry_date: expiryDate || null,
+          p_no_expiry: noExpiry,
+        });
 
     setUploading(false);
     if (error) {
-      alert("Failed to record document: " + error.message);
+      alert("Failed: " + error.message);
       return;
     }
     setFile(null);
@@ -131,6 +167,7 @@ export default function ExpertDocumentsPage() {
     setIssueDate("");
     setExpiryDate("");
     setNoExpiry(false);
+    setReplacingId(null);
     load();
   }
 
@@ -144,48 +181,91 @@ export default function ExpertDocumentsPage() {
 
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
           {docs.map((d) => (
-            <div key={d.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.1rem", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 600, fontSize: "0.9rem", textTransform: "capitalize" }}>
-                  {d.label || d.doc_type.replace("_", " ")}
+            <div key={d.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.1rem", marginBottom: "0.6rem", opacity: d.lifecycle_status === "superseded" || d.lifecycle_status === "removed" ? 0.6 : 1 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                <div>
+                  <div style={{ fontWeight: 600, fontSize: "0.9rem", textTransform: "capitalize" }}>
+                    {d.label || d.doc_type.replace("_", " ")}
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                    Uploaded {new Date(d.uploaded_at).toLocaleDateString()}
+                  </div>
+                  <div style={{ fontSize: "0.75rem", fontWeight: 600, color: statusColor[d.verification_status] || "var(--muted)", textTransform: "capitalize", marginTop: "0.2rem" }}>
+                    {d.verification_status.replace("_", " ")}
+                    {d.expiry_date && !d.no_expiry && ` · Expires ${new Date(d.expiry_date).toLocaleDateString()}`}
+                    {d.lifecycle_status === "superseded" && ` · Superseded${d.replaced_at ? " " + new Date(d.replaced_at).toLocaleDateString() : ""}`}
+                    {d.lifecycle_status === "removal_requested" && " · Removal Pending"}
+                    {d.lifecycle_status === "removed" && " · Removed"}
+                  </div>
                 </div>
-                <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-                  Uploaded {new Date(d.uploaded_at).toLocaleDateString()}
-                </div>
-                <div style={{ fontSize: "0.75rem", fontWeight: 600, color: statusColor[d.verification_status] || "var(--muted)", textTransform: "capitalize", marginTop: "0.2rem" }}>
-                  {d.verification_status.replace("_", " ")}
-                  {d.expiry_date && !d.no_expiry && ` · Expires ${new Date(d.expiry_date).toLocaleDateString()}`}
-                </div>
+                <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.4rem 0.9rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
+                  View
+                </button>
               </div>
-              <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.4rem 0.9rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
-                View / Download
-              </button>
+              {d.lifecycle_status === "current" && (
+                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem" }}>
+                  {d.verification_status === "pending_verification" ? (
+                    <button onClick={() => deletePending(d.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                      Delete
+                    </button>
+                  ) : (
+                    <>
+                      <button onClick={() => setReplacingId(d.id)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                        Request Replacement
+                      </button>
+                      <button onClick={() => requestRemoval(d.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                        Request Removal
+                      </button>
+                    </>
+                  )}
+                </div>
+              )}
+              {replacingId === d.id && (
+                <div style={{ marginTop: "0.6rem", padding: "0.6rem", background: "var(--gold-light)", borderRadius: "6px" }}>
+                  <p style={{ fontSize: "0.75rem", marginBottom: "0.4rem" }}>Upload replacement for: <strong>{d.label || d.doc_type.replace("_", " ")}</strong></p>
+                  <input type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.4rem", fontSize: "0.85rem" }} />
+                  <button onClick={() => setReplacingId(null)} style={{ background: "transparent", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                    Cancel
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
 
         <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
-          <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Add Credential</div>
-          <select value={docType} onChange={(e) => setDocType(e.target.value)} style={inputStyle}>
-            {DOC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-          </select>
-          <select value={credentialTypeId} onChange={(e) => setCredentialTypeId(e.target.value ? Number(e.target.value) : "")} style={inputStyle}>
-            <option value="">Credential type (optional)...</option>
-            {credTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-          </select>
-          <input placeholder="Issuing organization" value={issuingOrg} onChange={(e) => setIssuingOrg(e.target.value)} style={inputStyle} />
-          <input type="date" placeholder="Issue date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} style={inputStyle} />
-          <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.6rem" }}>
-            <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} disabled={noExpiry} style={{ flex: 1, padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem" }} />
-            <label style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>
-              <input type="checkbox" checked={noExpiry} onChange={(e) => setNoExpiry(e.target.checked)} /> No Expiry
-            </label>
+          <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>
+            {replacingId ? "Replace Document" : "Add Credential"}
           </div>
+          {!replacingId && (
+            <>
+              <select value={docType} onChange={(e) => setDocType(e.target.value)} style={inputStyle}>
+                {DOC_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+              <select value={credentialTypeId} onChange={(e) => setCredentialTypeId(e.target.value ? Number(e.target.value) : "")} style={inputStyle}>
+                <option value="">Credential type (optional)...</option>
+                {credTypes.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+              </select>
+              <input placeholder="Issuing organization" value={issuingOrg} onChange={(e) => setIssuingOrg(e.target.value)} style={inputStyle} />
+              <input type="date" placeholder="Issue date" value={issueDate} onChange={(e) => setIssueDate(e.target.value)} style={inputStyle} />
+              <div style={{ display: "flex", alignItems: "center", gap: "0.6rem", marginBottom: "0.6rem" }}>
+                <input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} disabled={noExpiry} style={{ flex: 1, padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem" }} />
+                <label style={{ fontSize: "0.8rem", whiteSpace: "nowrap" }}>
+                  <input type="checkbox" checked={noExpiry} onChange={(e) => setNoExpiry(e.target.checked)} /> No Expiry
+                </label>
+              </div>
+            </>
+          )}
           <input placeholder="Document name (e.g. MSc in Statistics)" value={label} onChange={(e) => setLabel(e.target.value)} style={inputStyle} />
           <input type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.75rem", fontSize: "0.85rem" }} />
-          <button onClick={upload} disabled={uploading} style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.65rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}>
-            {uploading ? "Uploading..." : "Upload Document"}
+          <button onClick={uploadOrReplace} disabled={uploading} style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.65rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer" }}>
+            {uploading ? "Uploading..." : replacingId ? "Upload Replacement" : "Upload Document"}
           </button>
+          {replacingId && (
+            <button onClick={() => setReplacingId(null)} style={{ width: "100%", marginTop: "0.5rem", background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.5rem", borderRadius: "6px", fontSize: "0.8rem", cursor: "pointer" }}>
+              Cancel Replacement
+            </button>
+          )}
         </div>
       </div>
     </div>

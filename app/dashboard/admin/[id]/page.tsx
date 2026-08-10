@@ -853,9 +853,10 @@ export default function AdminProjectDetail() {
               />
               <button
                 onClick={sendQuotation}
-                style={{ width: "100%", background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: "pointer", fontSize: "0.85rem" }}
+                disabled={latestQuotation?.status === "pending"}
+                style={{ width: "100%", background: latestQuotation?.status === "pending" ? "var(--border)" : "var(--gold)", color: "var(--ink)", border: "none", padding: "0.6rem", borderRadius: "6px", fontWeight: 600, cursor: latestQuotation?.status === "pending" ? "not-allowed" : "pointer", fontSize: "0.85rem" }}
               >
-                Send Quotation
+                {latestQuotation?.status === "pending" ? "Quotation Pending Client Response" : latestQuotation?.status === "rejected" ? "Send Revised Quotation" : "Send Quotation"}
               </button>
             </div>
 

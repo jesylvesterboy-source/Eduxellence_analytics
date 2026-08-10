@@ -28,6 +28,7 @@ type Doc = {
   no_expiry: boolean;
   issuing_organization: string | null;
   issue_date: string | null;
+  lifecycle_status: string;
 };
 
 const statusColor: Record<string, string> = {
@@ -74,7 +75,7 @@ export default function AdminExpertsPage() {
 
     const { data: docRows } = await supabase
       .from("expert_documents")
-      .select("id, expert_id, doc_type, label, file_path, verification_status, expiry_date, no_expiry, issuing_organization, issue_date");
+      .select("id, expert_id, doc_type, label, file_path, verification_status, expiry_date, no_expiry, issuing_organization, issue_date, lifecycle_status");
     const grouped: Record<string, Doc[]> = {};
     (docRows || []).forEach((d: any) => {
       if (!grouped[d.expert_id]) grouped[d.expert_id] = [];
@@ -179,6 +180,23 @@ export default function AdminExpertsPage() {
     loadApplicants();
   }
 
+  async function decideRemoval(docId: string, approve: boolean) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase.rpc("fn_decide_document_removal", {
+      p_document_id: docId,
+      p_admin_id: user.id,
+      p_approve: approve,
+    });
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    loadApplicants();
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
@@ -226,16 +244,25 @@ export default function AdminExpertsPage() {
                         )}
                       </div>
                       <div style={{ display: "flex", gap: "0.4rem", alignItems: "center", flexWrap: "wrap" }}>
-                        <span style={{ fontSize: "0.7rem", fontWeight: 600, color: statusColor[d.verification_status] }}>
+                        <span style={{ fontSize: "0.7rem", fontWeight: 600, color: statusColor[d.verification_status] || "var(--muted)" }}>
                           {d.verification_status.replace("_", " ")}
                           {d.expiry_date && !d.no_expiry && ` · Expires ${new Date(d.expiry_date).toLocaleDateString()}`}
                           {d.no_expiry && " · No Expiry"}
+                          {d.lifecycle_status === "removal_requested" && " · Removal Pending"}
+                          {d.lifecycle_status === "superseded" && " · Superseded"}
+                          {d.lifecycle_status === "removed" && " · Removed"}
                         </span>
                         <button onClick={() => viewAndDecideDocument(d)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>View</button>
                         {d.verification_status === "pending_verification" && (
                           <>
                             <button onClick={() => decideDocument(d.id, "verified")} style={{ background: "#1e8449", color: "white", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>✓</button>
                             <button onClick={() => decideDocument(d.id, "rejected")} style={{ background: "#c0392b", color: "white", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>✗</button>
+                          </>
+                        )}
+                        {d.lifecycle_status === "removal_requested" && (
+                          <>
+                            <button onClick={() => decideRemoval(d.id, true)} style={{ background: "#c0392b", color: "white", border: "none", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>Approve Removal</button>
+                            <button onClick={() => decideRemoval(d.id, false)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.2rem 0.6rem", borderRadius: "4px", fontSize: "0.7rem", cursor: "pointer" }}>Decline</button>
                           </>
                         )}
                       </div>

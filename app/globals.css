@@ -334,3 +334,13 @@ footer a:hover { text-decoration: underline; }
   .dropdown.open .dropdown-content { display: block; }
   .dropdown .drop-trigger { cursor: pointer; }
 }
+
+/* CHECKBOX & RADIO FIX */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: auto;
+  -webkit-appearance: auto;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gold);
+}

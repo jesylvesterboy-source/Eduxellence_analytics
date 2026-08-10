@@ -179,6 +179,13 @@ export default function ClientProjectDetail() {
           setMessages((prev) => prev.filter((m) => m.id !== (payload.old as Message).id));
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "quotations", filter: `project_id=eq.${projectId}` },
+        () => {
+          loadData();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -412,35 +419,33 @@ export default function ClientProjectDetail() {
                   {m.description && <p style={{ fontSize: "0.8rem", color: "var(--muted)", margin: "0.3rem 0" }}>{m.description}</p>}
                   <div style={{ fontSize: "0.75rem", color: "var(--gold-dark)", fontWeight: 600, textTransform: "capitalize" }}>{m.status.replace("_", " ")}</div>
 
-                  {!payment && quotation?.usd_to_ngn_rate !== undefined && (
-                    <div style={{ marginTop: "0.75rem" }}>
-                      <PaymentMethodSelector
-                        amountUsd={m.amount}
-                        ngnRate={quotation?.usd_to_ngn_rate ?? null}
-                        userEmail={userEmail}
-                        bankReference={`EDUX-MS-${m.id}`}
-                        existingPayment={milestonePayments[m.id] || null}
-                        onSubmitPayment={async (method, bankCurrency, reference, proofFile) => {
-                          let proofUrl: string | null = null;
-                          if (proofFile) {
-                            const filePath = `${projectId}/milestone-proof-${Date.now()}-${proofFile.name}`;
-                            const { error: uploadError } = await supabase.storage.from("project-files").upload(filePath, proofFile);
-                            if (!uploadError) proofUrl = filePath;
-                          }
-                          const { error } = await supabase.rpc("fn_confirm_milestone_payment", {
-                            p_milestone_id: m.id,
-                            p_method: method,
-                            p_bank_currency: bankCurrency,
-                            p_reference: reference,
-                            p_proof_url: proofUrl,
-                          });
-                          if (error) return { error: error.message };
-                          loadData();
-                          return {};
-                        }}
-                      />
-                    </div>
-                  )}
+                  <div style={{ marginTop: "0.75rem" }}>
+                    <PaymentMethodSelector
+                      amountUsd={m.amount}
+                      ngnRate={quotation?.usd_to_ngn_rate ?? null}
+                      userEmail={userEmail}
+                      bankReference={`EDUX-MS-${m.id}`}
+                      existingPayment={milestonePayments[m.id] || null}
+                      onSubmitPayment={async (method, bankCurrency, reference, proofFile) => {
+                        let proofUrl: string | null = null;
+                        if (proofFile) {
+                          const filePath = `${projectId}/milestone-proof-${Date.now()}-${proofFile.name}`;
+                          const { error: uploadError } = await supabase.storage.from("project-files").upload(filePath, proofFile);
+                          if (!uploadError) proofUrl = filePath;
+                        }
+                        const { error } = await supabase.rpc("fn_confirm_milestone_payment", {
+                          p_milestone_id: m.id,
+                          p_method: method,
+                          p_bank_currency: bankCurrency,
+                          p_reference: reference,
+                          p_proof_url: proofUrl,
+                        });
+                        if (error) return { error: error.message };
+                        loadData();
+                        return {};
+                      }}
+                    />
+                  </div>
                   {payment && (
                     <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.4rem" }}>
                       Payment {payment.status} — {payment.verification_status}
