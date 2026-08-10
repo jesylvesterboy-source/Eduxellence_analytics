@@ -193,9 +193,10 @@ export default function AdminPaymentsPage() {
                 </div>
               )}
 
-              {p.method === "bank_transfer" && p.verification_status === "pending" && (
+              {/* UPDATED: Show Verify/Reject for ANY payment with pending verification */}
+              {p.verification_status === "pending" && p.status === "pending" && (
                 <div style={{ display: "flex", gap: "0.75rem", alignItems: "center", marginTop: "0.75rem" }}>
-                  {proofLinks[p.id] && (
+                  {p.proof_of_payment_url && proofLinks[p.id] && (
                     <a href={proofLinks[p.id]} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.8rem", color: "var(--gold-dark)", fontWeight: 600 }}>
                       View Proof
                     </a>
