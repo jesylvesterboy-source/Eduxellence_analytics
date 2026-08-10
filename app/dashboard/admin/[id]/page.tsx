@@ -1027,6 +1027,13 @@ export default function AdminProjectDetail() {
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Milestones</div>
 
+              {/* UPDATED: Explanatory message when no approved quotation exists */}
+              {!quotations.some((q) => q.status === "approved") && (
+                <p style={{ fontSize: "0.72rem", color: "#c0392b", marginBottom: "0.4rem" }}>
+                  Client must approve a quotation before milestones can be created.
+                </p>
+              )}
+
               {milestones.map((m) => {
                 const payment = milestonePayments[m.id];
                 return (
@@ -1062,7 +1069,25 @@ export default function AdminProjectDetail() {
                 <input placeholder="Description (optional)" value={milestoneDesc} onChange={(e) => setMilestoneDesc(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
                 <input type="number" placeholder="Amount (USD)" value={milestoneAmount} onChange={(e) => setMilestoneAmount(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
                 <input type="date" value={milestoneDueDate} onChange={(e) => setMilestoneDueDate(e.target.value)} style={{ width: "100%", padding: "0.5rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.8rem", marginBottom: "0.4rem" }} />
-                <button onClick={createMilestone} style={{ width: "100%", background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>Add Milestone</button>
+                
+                {/* UPDATED: Disabled Add Milestone button when no approved quotation exists */}
+                <button
+                  onClick={createMilestone}
+                  disabled={!quotations.some((q) => q.status === "approved")}
+                  style={{
+                    width: "100%",
+                    background: quotations.some((q) => q.status === "approved") ? "var(--ink)" : "var(--border)",
+                    color: "var(--white)",
+                    border: "none",
+                    padding: "0.5rem",
+                    borderRadius: "6px",
+                    fontWeight: 600,
+                    fontSize: "0.8rem",
+                    cursor: quotations.some((q) => q.status === "approved") ? "pointer" : "not-allowed",
+                  }}
+                >
+                  Add Milestone
+                </button>
               </div>
             </div>
 
