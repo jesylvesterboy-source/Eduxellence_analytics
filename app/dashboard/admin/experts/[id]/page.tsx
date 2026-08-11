@@ -109,7 +109,8 @@ export default function AdminExpertProfilePage() {
       .eq("expert_id", expertId);
     setDocs(docRows || []);
 
-    const photoDoc = (docRows || []).find((d) => d.doc_type === "profile_photo");
+    // FIXED: Added lifecycle_status === "current" filter to pick the active photo
+    const photoDoc = (docRows || []).find((d) => d.doc_type === "profile_photo" && d.lifecycle_status === "current");
     if (photoDoc) {
       const { data: signed } = await supabase.storage.from("expert-applications").createSignedUrl(photoDoc.file_path, 600);
       setPhotoUrl(signed?.signedUrl ?? null);
