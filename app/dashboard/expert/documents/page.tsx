@@ -24,6 +24,8 @@ type Doc = {
   lifecycle_status: string;
   superseded_by: string | null;
   replaced_at: string | null;
+  is_required: boolean;
+  replaces_document_id: string | null;
 };
 
 const statusColor: Record<string, string> = {
@@ -60,7 +62,7 @@ export default function ExpertDocumentsPage() {
     if (!user) return;
     const { data } = await supabase
       .from("expert_documents")
-      .select("id, doc_type, label, file_path, file_name, verification_status, uploaded_at, expiry_date, no_expiry, lifecycle_status, superseded_by, replaced_at")
+      .select("id, doc_type, label, file_path, file_name, verification_status, uploaded_at, expiry_date, no_expiry, lifecycle_status, superseded_by, replaced_at, is_required, replaces_document_id")
       .eq("expert_id", user.id)
       .order("uploaded_at", { ascending: false });
     setDocs(data || []);
@@ -103,6 +105,11 @@ export default function ExpertDocumentsPage() {
     if (!reason) return;
     const { error } = await supabase.rpc("fn_request_document_removal", { p_document_id: docId, p_reason: reason });
     if (error) {
+      if (error.message.startsWith("REPLACEMENT_REQUIRED:")) {
+        alert("This document is required for your Expert profile. Please upload a replacement — your current document stays active until Admin approves the new one.");
+        setReplacingId(docId);
+        return;
+      }
       alert(error.message);
       return;
     }
@@ -244,76 +251,108 @@ export default function ExpertDocumentsPage() {
         </h1>
 
         {/* PROFILE PHOTO BLOCK */}
-        <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
-          <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Profile Photo</div>
-          {currentPhoto ? (
-            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.6rem" }}>
-              {currentPhoto.verification_status.replace("_", " ")}
-              {pendingPhotoRemoval && " · Removal Pending Admin Review"}
-            </p>
-          ) : (
-            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.6rem" }}>No profile photo on file.</p>
-          )}
-          <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.6rem", fontSize: "0.85rem" }} />
-          <button onClick={uploadPhoto} disabled={uploadingPhoto} style={{ background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem 1rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
-            {uploadingPhoto ? "Uploading..." : currentPhoto ? "Replace Photo" : "Upload Photo"}
-          </button>
-        </div>
-
-        {/* My Documents & Credentials - filter out profile_photo */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
-          {docs.filter((d) => d.doc_type !== "profile_photo").map((d) => (
-            <div key={d.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.1rem", marginBottom: "0.6rem", opacity: d.lifecycle_status === "superseded" || d.lifecycle_status === "removed" ? 0.6 : 1 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <div style={{ fontWeight: 600, fontSize: "0.9rem", textTransform: "capitalize" }}>
-                    {d.label || d.doc_type.replace("_", " ")}
-                  </div>
-                  <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
-                    Uploaded {new Date(d.uploaded_at).toLocaleDateString()}
-                  </div>
-                  <div style={{ fontSize: "0.75rem", fontWeight: 600, color: statusColor[d.verification_status] || "var(--muted)", textTransform: "capitalize", marginTop: "0.2rem" }}>
-                    {d.verification_status.replace("_", " ")}
-                    {d.expiry_date && !d.no_expiry && ` · Expires ${new Date(d.expiry_date).toLocaleDateString()}`}
-                    {d.lifecycle_status === "superseded" && ` · Superseded${d.replaced_at ? " " + new Date(d.replaced_at).toLocaleDateString() : ""}`}
-                    {d.lifecycle_status === "removal_requested" && " · Removal Pending"}
-                    {d.lifecycle_status === "removed" && " · Removed"}
-                  </div>
-                </div>
-                <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.4rem 0.9rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
-                  View
-                </button>
-              </div>
-              {d.lifecycle_status === "current" && (
-                <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem" }}>
-                  {d.verification_status === "pending_verification" ? (
-                    <button onClick={() => deletePending(d.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
-                      Delete
-                    </button>
-                  ) : (
-                    <>
-                      <button onClick={() => setReplacingId(d.id)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
-                        Request Replacement
-                      </button>
-                      <button onClick={() => requestRemoval(d.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
-                        Request Removal
-                      </button>
-                    </>
-                  )}
-                </div>
+        {(() => {
+          const hasPendingPhotoReplacement = docs.some((x) => x.doc_type === "profile_photo" && x.lifecycle_status === "pending_replacement");
+          return (
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Profile Photo</div>
+              {currentPhoto ? (
+                <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.6rem" }}>
+                  {currentPhoto.verification_status.replace("_", " ")}
+                  {pendingPhotoRemoval && " · Removal Pending Admin Review"}
+                </p>
+              ) : (
+                <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.6rem" }}>No profile photo on file.</p>
               )}
-              {replacingId === d.id && (
-                <div style={{ marginTop: "0.6rem", padding: "0.6rem", background: "var(--gold-light)", borderRadius: "6px" }}>
-                  <p style={{ fontSize: "0.75rem", marginBottom: "0.4rem" }}>Upload replacement for: <strong>{d.label || d.doc_type.replace("_", " ")}</strong></p>
-                  <input type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.4rem", fontSize: "0.85rem" }} />
-                  <button onClick={() => setReplacingId(null)} style={{ background: "transparent", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
-                    Cancel
+              {hasPendingPhotoReplacement ? (
+                <p style={{ fontSize: "0.75rem", color: "var(--gold-dark)", fontWeight: 600 }}>New photo submitted — awaiting Admin review</p>
+              ) : (
+                <>
+                  <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.6rem", fontSize: "0.85rem" }} />
+                  <button onClick={uploadPhoto} disabled={uploadingPhoto} style={{ background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem 1rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
+                    {uploadingPhoto ? "Uploading..." : currentPhoto ? "Replace Photo" : "Upload Photo"}
                   </button>
-                </div>
+                </>
               )}
             </div>
-          ))}
-          {docs.filter((d) => d.doc_type !== "profile_photo").length === 0 && (
+          );
+        })()}
+
+        {/* My Documents & Credentials - filter out profile_photo and pending_replacement */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
+          {docs.filter((d) => d.doc_type !== "profile_photo" && d.lifecycle_status !== "pending_replacement").map((d) => {
+            const hasPendingReplacement = docs.some((x) => x.replaces_document_id === d.id && x.lifecycle_status === "pending_replacement");
+            return (
+              <div key={d.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.1rem", marginBottom: "0.6rem", opacity: d.lifecycle_status === "superseded" || d.lifecycle_status === "removed" ? 0.6 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                  <div>
+                    <div style={{ fontWeight: 600, fontSize: "0.9rem", textTransform: "capitalize" }}>
+                      {d.label || d.doc_type.replace("_", " ")}
+                      {d.is_required && (
+                        <span style={{ marginLeft: "0.5rem", fontSize: "0.65rem", fontWeight: 700, color: "var(--gold-dark)", background: "var(--gold-light)", padding: "0.1rem 0.4rem", borderRadius: "4px", textTransform: "uppercase" }}>
+                          Required
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
+                      Uploaded {new Date(d.uploaded_at).toLocaleDateString()}
+                    </div>
+                    <div style={{ fontSize: "0.75rem", fontWeight: 600, color: statusColor[d.verification_status] || "var(--muted)", textTransform: "capitalize", marginTop: "0.2rem" }}>
+                      {d.verification_status.replace("_", " ")}
+                      {d.expiry_date && !d.no_expiry && ` · Expires ${new Date(d.expiry_date).toLocaleDateString()}`}
+                      {d.lifecycle_status === "superseded" && ` · Superseded${d.replaced_at ? " " + new Date(d.replaced_at).toLocaleDateString() : ""}`}
+                      {d.lifecycle_status === "removal_requested" && " · Removal Pending"}
+                      {d.lifecycle_status === "removed" && " · Removed"}
+                    </div>
+                  </div>
+                  <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.4rem 0.9rem", borderRadius: "6px", fontSize: "0.78rem", fontWeight: 600, cursor: "pointer" }}>
+                    View
+                  </button>
+                </div>
+                {d.lifecycle_status === "current" && (() => {
+                  if (hasPendingReplacement) {
+                    return (
+                      <p style={{ fontSize: "0.75rem", color: "var(--gold-dark)", fontWeight: 600, marginTop: "0.6rem" }}>
+                        Replacement submitted — awaiting Admin review
+                      </p>
+                    );
+                  }
+                  return (
+                    <div style={{ display: "flex", gap: "0.5rem", marginTop: "0.6rem" }}>
+                      {d.verification_status === "pending_verification" ? (
+                        <button onClick={() => deletePending(d.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                          Delete
+                        </button>
+                      ) : d.is_required ? (
+                        <button onClick={() => setReplacingId(d.id)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                          Upload Replacement
+                        </button>
+                      ) : (
+                        <>
+                          <button onClick={() => setReplacingId(d.id)} style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                            Request Replacement
+                          </button>
+                          <button onClick={() => requestRemoval(d.id)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                            Request Removal
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+                {replacingId === d.id && (
+                  <div style={{ marginTop: "0.6rem", padding: "0.6rem", background: "var(--gold-light)", borderRadius: "6px" }}>
+                    <p style={{ fontSize: "0.75rem", marginBottom: "0.4rem" }}>Upload replacement for: <strong>{d.label || d.doc_type.replace("_", " ")}</strong></p>
+                    <input type="file" accept=".pdf,image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.4rem", fontSize: "0.85rem" }} />
+                    <button onClick={() => setReplacingId(null)} style={{ background: "transparent", border: "1px solid var(--border)", padding: "0.3rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          {docs.filter((d) => d.doc_type !== "profile_photo" && d.lifecycle_status !== "pending_replacement").length === 0 && (
             <p style={{ fontSize: "0.8rem", color: "var(--muted)", textAlign: "center" }}>No documents uploaded.</p>
           )}
         </div>

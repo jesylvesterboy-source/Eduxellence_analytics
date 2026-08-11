@@ -24,7 +24,7 @@ type CapabilityProfile = {
   preferred_project_types: string[] | null;
 };
 
-type DocRow = { id: string; doc_type: string; label: string | null; file_path: string; verification_status: string; lifecycle_status: string; expiry_date: string | null; no_expiry: boolean };
+type DocRow = { id: string; doc_type: string; label: string | null; file_path: string; verification_status: string; lifecycle_status: string; expiry_date: string | null; no_expiry: boolean; is_required: boolean; replaces_document_id: string | null };
 
 type EarningsSummary = { pending: number; available: number; paid: number; lifetime: number };
 
@@ -105,7 +105,7 @@ export default function AdminExpertProfilePage() {
 
     const { data: docRows } = await supabase
       .from("expert_documents")
-      .select("id, doc_type, label, file_path, verification_status, lifecycle_status, expiry_date, no_expiry")
+      .select("id, doc_type, label, file_path, verification_status, lifecycle_status, expiry_date, no_expiry, is_required, replaces_document_id")
       .eq("expert_id", expertId);
     setDocs(docRows || []);
 
@@ -214,6 +214,32 @@ export default function AdminExpertProfilePage() {
     load();
   }
 
+  async function decideReplacement(newDocId: string, approve: boolean) {
+    if (!adminId) return;
+    let reason: string | null = null;
+    if (!approve) {
+      reason = prompt("Reason for rejecting this replacement:") ?? null;
+      if (reason === null) return;
+    }
+    const { error } = await supabase.rpc("fn_decide_document_replacement", {
+      p_new_document_id: newDocId,
+      p_admin_id: adminId,
+      p_approve: approve,
+      p_reason: reason,
+    });
+    if (error) return alert(error.message);
+    load();
+  }
+
+  async function toggleRequired(docId: string, required: boolean) {
+    const { error } = await supabase.rpc("fn_set_document_required", {
+      p_document_id: docId,
+      p_required: required,
+    });
+    if (error) return alert(error.message);
+    load();
+  }
+
   if (loading || !overview) {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
@@ -262,9 +288,9 @@ export default function AdminExpertProfilePage() {
           </div>
         </div>
 
-        {/* PROFILE PHOTO SECTION */}
+        {/* PROFILE PHOTO SECTION - FIXED: added lifecycle_status === "current" filter */}
         {(() => {
-          const photoDoc = docs.find((d) => d.doc_type === "profile_photo");
+          const photoDoc = docs.find((d) => d.doc_type === "profile_photo" && d.lifecycle_status === "current");
           if (!photoDoc) return null;
           return (
             <Section title="Profile Photo">
@@ -288,12 +314,62 @@ export default function AdminExpertProfilePage() {
           );
         })()}
 
-        {/* CREDENTIALS */}
+        {/* PENDING REPLACEMENTS SECTION */}
+        {(() => {
+          const pendingReplacements = docs.filter((d) => d.lifecycle_status === "pending_replacement");
+          if (pendingReplacements.length === 0) return null;
+          return (
+            <Section title="Pending Replacements">
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                {pendingReplacements.map((newDoc) => {
+                  const oldDoc = docs.find((d) => d.id === newDoc.replaces_document_id);
+                  const isPhoto = newDoc.doc_type === "profile_photo";
+                  return (
+                    <div key={newDoc.id} style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "0.9rem" }}>
+                      <div style={{ fontWeight: 600, fontSize: "0.85rem", marginBottom: "0.6rem", textTransform: "capitalize" }}>
+                        {isPhoto ? "Profile Photo Replacement" : (newDoc.label || newDoc.doc_type.replace("_", " ")) + " — Replacement"}
+                      </div>
+                      <div style={{ display: "flex", gap: "1.5rem", marginBottom: "0.7rem", fontSize: "0.78rem" }}>
+                        <div>
+                          <div style={{ color: "var(--muted)", marginBottom: "0.2rem" }}>Current</div>
+                          {oldDoc ? (
+                            <button onClick={() => viewDoc(oldDoc)} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "4px", padding: "0.2rem 0.6rem", fontSize: "0.72rem", cursor: "pointer" }}>View Current</button>
+                          ) : <span style={{ color: "var(--muted)" }}>—</span>}
+                        </div>
+                        <div>
+                          <div style={{ color: "var(--muted)", marginBottom: "0.2rem" }}>Replacement</div>
+                          <button onClick={() => viewDoc(newDoc)} style={{ background: "var(--gold)", border: "none", borderRadius: "4px", padding: "0.2rem 0.6rem", fontSize: "0.72rem", cursor: "pointer" }}>View New</button>
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "0.5rem" }}>
+                        <button onClick={() => decideReplacement(newDoc.id, true)} style={{ background: "#1e8449", color: "white", border: "none", borderRadius: "4px", padding: "0.3rem 0.8rem", fontSize: "0.75rem", cursor: "pointer" }}>
+                          Approve Replacement
+                        </button>
+                        <button onClick={() => decideReplacement(newDoc.id, false)} style={{ background: "transparent", border: "1px solid #c0392b", color: "#c0392b", borderRadius: "4px", padding: "0.3rem 0.8rem", fontSize: "0.75rem", cursor: "pointer" }}>
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Section>
+          );
+        })()}
+
+        {/* CREDENTIALS - filtered to exclude profile_photo and pending_replacement */}
         <Section title="Credentials & Documents">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {docs.filter((d) => d.doc_type !== "profile_photo").map((d) => (
+            {docs.filter((d) => d.doc_type !== "profile_photo" && d.lifecycle_status !== "pending_replacement").map((d) => (
               <div key={d.id} style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "0.5rem 0.8rem", fontSize: "0.78rem", display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-                <span style={{ textTransform: "capitalize" }}>{d.label || d.doc_type.replace("_", " ")}</span>
+                <span style={{ textTransform: "capitalize" }}>
+                  {d.label || d.doc_type.replace("_", " ")}
+                  {d.is_required && (
+                    <span style={{ marginLeft: "0.4rem", fontSize: "0.6rem", fontWeight: 700, color: "var(--gold-dark)", background: "var(--gold-light)", padding: "0.1rem 0.35rem", borderRadius: "3px", textTransform: "uppercase" }}>
+                      Required
+                    </span>
+                  )}
+                </span>
                 <span style={{ color: statusColor[d.verification_status] || "var(--muted)", fontWeight: 600, textTransform: "capitalize" }}>
                   {d.verification_status.replace("_", " ")}
                   {d.lifecycle_status === "removal_requested" && " · Removal Pending"}
@@ -302,6 +378,9 @@ export default function AdminExpertProfilePage() {
                 {d.expiry_date && !d.no_expiry && <span style={{ color: "var(--muted)" }}>· exp {new Date(d.expiry_date).toLocaleDateString()}</span>}
                 <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", border: "none", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>
                   View
+                </button>
+                <button onClick={() => toggleRequired(d.id, !d.is_required)} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.68rem", cursor: "pointer" }}>
+                  {d.is_required ? "Unmark Required" : "Mark as Required"}
                 </button>
                 {d.verification_status === "pending_verification" && (
                   <>
@@ -325,7 +404,7 @@ export default function AdminExpertProfilePage() {
                 )}
               </div>
             ))}
-            {docs.filter((d) => d.doc_type !== "profile_photo").length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>No documents uploaded.</p>}
+            {docs.filter((d) => d.doc_type !== "profile_photo" && d.lifecycle_status !== "pending_replacement").length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>No documents uploaded.</p>}
           </div>
         </Section>
 
