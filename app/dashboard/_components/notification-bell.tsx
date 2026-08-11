@@ -9,6 +9,7 @@ type Notification = {
   title: string;
   body: string | null;
   link: string | null;
+  action_url: string | null;
   is_read: boolean;
   created_at: string;
 };
@@ -29,7 +30,7 @@ export default function NotificationBell() {
 
     const { data } = await supabase
       .from("notifications")
-      .select("id, title, body, link, is_read, created_at")
+      .select("id, title, body, link, action_url, is_read, created_at")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20);
@@ -72,7 +73,8 @@ export default function NotificationBell() {
       setNotifications((prev) => prev.map((x) => (x.id === n.id ? { ...x, is_read: true } : x)));
     }
     setOpen(false);
-    if (n.link) router.push(n.link);
+    const target = n.action_url || n.link;
+    if (target) router.push(target);
   }
 
   return (

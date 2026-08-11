@@ -24,7 +24,7 @@ type CapabilityProfile = {
   preferred_project_types: string[] | null;
 };
 
-type DocRow = { id: string; doc_type: string; label: string | null; file_path: string; verification_status: string; expiry_date: string | null; no_expiry: boolean };
+type DocRow = { id: string; doc_type: string; label: string | null; file_path: string; verification_status: string; lifecycle_status: string; expiry_date: string | null; no_expiry: boolean };
 
 type EarningsSummary = { pending: number; available: number; paid: number; lifetime: number };
 
@@ -60,9 +60,15 @@ export default function AdminExpertProfilePage() {
   const [pastProjects, setPastProjects] = useState<ProjectRow[]>([]);
   const [declinedOffers, setDeclinedOffers] = useState<OfferRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminId, setAdminId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    setAdminId(user?.id ?? null);
 
     const { data: profile } = await supabase
       .from("profiles")
@@ -99,7 +105,7 @@ export default function AdminExpertProfilePage() {
 
     const { data: docRows } = await supabase
       .from("expert_documents")
-      .select("id, doc_type, label, file_path, verification_status, expiry_date, no_expiry")
+      .select("id, doc_type, label, file_path, verification_status, lifecycle_status, expiry_date, no_expiry")
       .eq("expert_id", expertId);
     setDocs(docRows || []);
 
@@ -177,6 +183,36 @@ export default function AdminExpertProfilePage() {
     if (data?.signedUrl) window.open(data.signedUrl, "_blank");
   }
 
+  async function verify(docId: string, decision: "verified" | "rejected") {
+    if (!adminId) return;
+    let reason: string | null = null;
+    if (decision === "rejected") {
+      reason = prompt("Reason:") ?? null;
+      if (reason === null) return;
+    }
+    const { error } = await supabase.rpc("fn_verify_document", {
+      p_document_id: docId,
+      p_admin_id: adminId,
+      p_decision: decision,
+      p_reason: reason,
+      p_override_expiry_date: null,
+      p_override_no_expiry: null,
+    });
+    if (error) return alert(error.message);
+    load();
+  }
+
+  async function decideRemoval(docId: string, approve: boolean) {
+    if (!adminId) return;
+    const { error } = await supabase.rpc("fn_decide_document_removal", {
+      p_document_id: docId,
+      p_admin_id: adminId,
+      p_approve: approve,
+    });
+    if (error) return alert(error.message);
+    load();
+  }
+
   if (loading || !overview) {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
@@ -225,18 +261,70 @@ export default function AdminExpertProfilePage() {
           </div>
         </div>
 
+        {/* PROFILE PHOTO SECTION */}
+        {(() => {
+          const photoDoc = docs.find((d) => d.doc_type === "profile_photo");
+          if (!photoDoc) return null;
+          return (
+            <Section title="Profile Photo">
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "0.8rem" }}>
+                <span style={{ color: statusColor[photoDoc.verification_status] || "var(--muted)", fontWeight: 600 }}>
+                  {photoDoc.verification_status.replace("_", " ")}
+                  {photoDoc.lifecycle_status === "removal_requested" && " · Removal Requested"}
+                </span>
+                {photoDoc.lifecycle_status === "removal_requested" && (
+                  <div style={{ display: "flex", gap: "0.5rem" }}>
+                    <button onClick={() => decideRemoval(photoDoc.id, true)} style={{ background: "#c0392b", color: "white", border: "none", borderRadius: "4px", padding: "0.3rem 0.7rem", fontSize: "0.75rem", cursor: "pointer" }}>
+                      Approve Removal
+                    </button>
+                    <button onClick={() => decideRemoval(photoDoc.id, false)} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "4px", padding: "0.3rem 0.7rem", fontSize: "0.75rem", cursor: "pointer" }}>
+                      Decline
+                    </button>
+                  </div>
+                )}
+              </div>
+            </Section>
+          );
+        })()}
+
         {/* CREDENTIALS */}
         <Section title="Credentials & Documents">
           <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
-            {docs.map((d) => (
-              <div key={d.id} style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "0.5rem 0.8rem", fontSize: "0.78rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            {docs.filter((d) => d.doc_type !== "profile_photo").map((d) => (
+              <div key={d.id} style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "0.5rem 0.8rem", fontSize: "0.78rem", display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
                 <span style={{ textTransform: "capitalize" }}>{d.label || d.doc_type.replace("_", " ")}</span>
-                <span style={{ color: statusColor[d.verification_status] || "var(--muted)", fontWeight: 600, textTransform: "capitalize" }}>{d.verification_status.replace("_", " ")}</span>
+                <span style={{ color: statusColor[d.verification_status] || "var(--muted)", fontWeight: 600, textTransform: "capitalize" }}>
+                  {d.verification_status.replace("_", " ")}
+                  {d.lifecycle_status === "removal_requested" && " · Removal Pending"}
+                  {d.lifecycle_status === "superseded" && " · Superseded"}
+                </span>
                 {d.expiry_date && !d.no_expiry && <span style={{ color: "var(--muted)" }}>· exp {new Date(d.expiry_date).toLocaleDateString()}</span>}
-                <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", border: "none", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>View</button>
+                <button onClick={() => viewDoc(d)} style={{ background: "var(--gold)", border: "none", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>
+                  View
+                </button>
+                {d.verification_status === "pending_verification" && (
+                  <>
+                    <button onClick={() => verify(d.id, "verified")} style={{ background: "#1e8449", color: "white", border: "none", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>
+                      ✓
+                    </button>
+                    <button onClick={() => verify(d.id, "rejected")} style={{ background: "#c0392b", color: "white", border: "none", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>
+                      ✗
+                    </button>
+                  </>
+                )}
+                {d.lifecycle_status === "removal_requested" && (
+                  <>
+                    <button onClick={() => decideRemoval(d.id, true)} style={{ background: "#c0392b", color: "white", border: "none", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>
+                      Approve Removal
+                    </button>
+                    <button onClick={() => decideRemoval(d.id, false)} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "4px", padding: "0.15rem 0.5rem", fontSize: "0.7rem", cursor: "pointer" }}>
+                      Decline
+                    </button>
+                  </>
+                )}
               </div>
             ))}
-            {docs.length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>No documents uploaded.</p>}
+            {docs.filter((d) => d.doc_type !== "profile_photo").length === 0 && <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>No documents uploaded.</p>}
           </div>
         </Section>
 
