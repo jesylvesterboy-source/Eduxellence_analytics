@@ -56,6 +56,7 @@ export default function AdminExpertProfilePage() {
   const [promotionStatus, setPromotionStatus] = useState<string | null>(null);
   const [earnings, setEarnings] = useState<EarningsSummary>({ pending: 0, available: 0, paid: 0, lifetime: 0 });
   const [payoutHistory, setPayoutHistory] = useState<{ period_label: string | null; amount: number; status: string }[]>([]);
+  const [payoutProfile, setPayoutProfile] = useState<{ method: string; account_name: string; bank_name: string | null; account_number: string; currency: string; status: string } | null>(null);
   const [currentProjects, setCurrentProjects] = useState<ProjectRow[]>([]);
   const [pastProjects, setPastProjects] = useState<ProjectRow[]>([]);
   const [declinedOffers, setDeclinedOffers] = useState<OfferRow[]>([]);
@@ -159,6 +160,14 @@ export default function AdminExpertProfilePage() {
       .order("created_at", { ascending: false })
       .limit(10);
     setPayoutHistory((payoutRows || []).map((p: any) => ({ period_label: p.payout_batches?.period_label ?? null, amount: p.amount, status: p.status })));
+
+    const { data: payoutProf } = await supabase
+      .from("payout_profiles")
+      .select("method, account_name, bank_name, account_number, currency, status")
+      .eq("expert_id", expertId)
+      .eq("is_active", true)
+      .maybeSingle();
+    setPayoutProfile(payoutProf);
 
     const { data: projRows } = await supabase.from("projects").select("id, title, status").eq("expert_id", expertId).order("created_at", { ascending: false });
     setCurrentProjects((projRows || []).filter((p) => !["completed", "cancelled", "declined"].includes(p.status)));
@@ -450,6 +459,25 @@ export default function AdminExpertProfilePage() {
                 </div>
               ))}
             </div>
+          )}
+        </Section>
+
+        {/* PAYOUT ACCOUNT */}
+        <Section title="Payout Account">
+          {payoutProfile ? (
+            <div style={{ fontSize: "0.85rem" }}>
+              <p><strong>{payoutProfile.account_name}</strong> - {payoutProfile.bank_name || payoutProfile.method}</p>
+              <p style={{ fontFamily: "monospace", color: "var(--muted)" }}>
+                {payoutProfile.account_number.length > 4 ? "****" + payoutProfile.account_number.slice(-4) : payoutProfile.account_number} - {payoutProfile.currency}
+              </p>
+              <p style={{ color: "#1e8449", fontWeight: 600, fontSize: "0.8rem", marginTop: "0.3rem" }}>Verified</p>
+            </div>
+          ) : (
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
+              No verified payout account yet. Check{" "}
+              <a href="/dashboard/admin/payout-profiles" style={{ color: "var(--gold-dark)" }}>Payout Profile Verification</a>{" "}
+              for pending submissions.
+            </p>
           )}
         </Section>
 
