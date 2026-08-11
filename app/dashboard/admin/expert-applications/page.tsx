@@ -14,7 +14,6 @@ type Applicant = {
   application_status: string;
   cv_url: string | null;
   government_id_url: string | null;
-  profile_photo_url: string | null;
   submitted_at: string | null;
 };
 
@@ -54,7 +53,7 @@ export default function AdminExpertsPage() {
 
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, email, bio, expertise, application_status, cv_url, government_id_url, profile_photo_url, submitted_at")
+      .select("id, full_name, email, bio, expertise, application_status, cv_url, government_id_url, submitted_at")
       .eq("role", "expert")
       .in("application_status", ["submitted", "under_review", "additional_info_requested"])
       .order("submitted_at", { ascending: true });
@@ -62,9 +61,10 @@ export default function AdminExpertsPage() {
     const rows = data || [];
     setApplicants(rows);
 
+    // Only handle cv and government_id URLs - profile photos come from expert_documents
     const links: Record<string, string> = {};
     for (const r of rows) {
-      for (const [key, url] of [["cv", r.cv_url], ["id", r.government_id_url], ["photo", r.profile_photo_url]] as const) {
+      for (const [key, url] of [["cv", r.cv_url], ["id", r.government_id_url]] as const) {
         if (url) {
           const { data: signed } = await supabase.storage.from("expert-applications").createSignedUrl(url, 60 * 60);
           if (signed?.signedUrl) links[`${r.id}-${key}`] = signed.signedUrl;

@@ -11,7 +11,6 @@ type Expert = {
   email: string | null;
   expertise: string[] | null;
   expert_level_id: number | null;
-  profile_photo_url: string | null;
 };
 
 type Level = { id: number; level_name: string; badge: string };
@@ -26,7 +25,7 @@ export default function AdminExpertsDirectoryPage() {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from("profiles")
-      .select("id, full_name, email, expertise, expert_level_id, profile_photo_url")
+      .select("id, full_name, email, expertise, expert_level_id")
       .eq("role", "expert")
       .eq("application_status", "approved")
       .order("full_name", { ascending: true });
@@ -39,12 +38,19 @@ export default function AdminExpertsDirectoryPage() {
     (levelRows || []).forEach((l) => (levelMap[l.id] = l));
     setLevels(levelMap);
 
+    // Fetch profile photos from expert_documents
+    const ids = rows.map((r) => r.id);
+    const { data: photoRows } = await supabase
+      .from("expert_documents")
+      .select("expert_id, file_path")
+      .eq("doc_type", "profile_photo")
+      .eq("lifecycle_status", "current")
+      .in("expert_id", ids.length > 0 ? ids : ["00000000-0000-0000-0000-000000000000"]);
+
     const links: Record<string, string> = {};
-    for (const r of rows) {
-      if (r.profile_photo_url) {
-        const { data: signed } = await supabase.storage.from("expert-applications").createSignedUrl(r.profile_photo_url, 60 * 60);
-        if (signed?.signedUrl) links[r.id] = signed.signedUrl;
-      }
+    for (const p of photoRows || []) {
+      const { data: signed } = await supabase.storage.from("expert-applications").createSignedUrl(p.file_path, 60 * 60);
+      if (signed?.signedUrl) links[p.expert_id] = signed.signedUrl;
     }
     setPhotoLinks(links);
   }, [supabase]);
