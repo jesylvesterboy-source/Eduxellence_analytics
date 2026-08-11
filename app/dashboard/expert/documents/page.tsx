@@ -49,6 +49,10 @@ export default function ExpertDocumentsPage() {
   const [noExpiry, setNoExpiry] = useState(false);
   const [replacingId, setReplacingId] = useState<string | null>(null);
 
+  // New state for profile photo
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
   const load = useCallback(async () => {
     const {
       data: { user },
@@ -103,6 +107,57 @@ export default function ExpertDocumentsPage() {
       return;
     }
     alert("Removal request sent to Admin.");
+    load();
+  }
+
+  // Profile photo upload function
+  async function uploadPhoto() {
+    if (!photoFile) return alert("Select a photo first.");
+    if (photoFile.size > 10 * 1024 * 1024) return alert("File too large — max 10MB.");
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setUploadingPhoto(true);
+    const path = `${user.id}/photo-${Date.now()}-${photoFile.name}`;
+    const { error: uploadError } = await supabase.storage.from("expert-applications").upload(path, photoFile);
+    if (uploadError) {
+      setUploadingPhoto(false);
+      return alert("Upload failed: " + uploadError.message);
+    }
+
+    const currentPhoto = docs.find((d) => d.doc_type === "profile_photo" && d.lifecycle_status === "current");
+
+    const { error } = currentPhoto
+      ? await supabase.rpc("fn_request_document_replacement", {
+          p_old_document_id: currentPhoto.id,
+          p_label: "Profile Photo",
+          p_new_file_path: path,
+          p_new_file_name: photoFile.name,
+          p_new_file_size: photoFile.size,
+          p_credential_type_id: null,
+          p_issuing_organization: null,
+          p_issue_date: null,
+          p_expiry_date: null,
+          p_no_expiry: false,
+        })
+      : await supabase.rpc("fn_upload_document", {
+          p_doc_type: "profile_photo",
+          p_label: "Profile Photo",
+          p_file_path: path,
+          p_file_name: photoFile.name,
+          p_file_size: photoFile.size,
+          p_credential_type_id: null,
+          p_issuing_organization: null,
+          p_issue_date: null,
+          p_expiry_date: null,
+          p_no_expiry: false,
+        });
+
+    setUploadingPhoto(false);
+    if (error) return alert("Failed: " + error.message);
+    setPhotoFile(null);
     load();
   }
 
@@ -177,6 +232,9 @@ export default function ExpertDocumentsPage() {
     load();
   }
 
+  const currentPhoto = docs.find((d) => d.doc_type === "profile_photo" && d.lifecycle_status === "current");
+  const pendingPhotoRemoval = currentPhoto?.lifecycle_status === "removal_requested";
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "700px", margin: "0 auto" }}>
@@ -185,8 +243,26 @@ export default function ExpertDocumentsPage() {
           My Documents &amp; Credentials
         </h1>
 
+        {/* PROFILE PHOTO BLOCK */}
+        <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
+          <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.9rem" }}>Profile Photo</div>
+          {currentPhoto ? (
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.6rem" }}>
+              {currentPhoto.verification_status.replace("_", " ")}
+              {pendingPhotoRemoval && " · Removal Pending Admin Review"}
+            </p>
+          ) : (
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginBottom: "0.6rem" }}>No profile photo on file.</p>
+          )}
+          <input type="file" accept="image/*" onChange={(e) => setPhotoFile(e.target.files?.[0] || null)} style={{ marginBottom: "0.6rem", fontSize: "0.85rem" }} />
+          <button onClick={uploadPhoto} disabled={uploadingPhoto} style={{ background: "var(--ink)", color: "var(--white)", border: "none", padding: "0.5rem 1rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
+            {uploadingPhoto ? "Uploading..." : currentPhoto ? "Replace Photo" : "Upload Photo"}
+          </button>
+        </div>
+
+        {/* My Documents & Credentials - filter out profile_photo */}
         <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", marginBottom: "2rem" }}>
-          {docs.map((d) => (
+          {docs.filter((d) => d.doc_type !== "profile_photo").map((d) => (
             <div key={d.id} style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.1rem", marginBottom: "0.6rem", opacity: d.lifecycle_status === "superseded" || d.lifecycle_status === "removed" ? 0.6 : 1 }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <div>
@@ -237,6 +313,9 @@ export default function ExpertDocumentsPage() {
               )}
             </div>
           ))}
+          {docs.filter((d) => d.doc_type !== "profile_photo").length === 0 && (
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", textAlign: "center" }}>No documents uploaded.</p>
+          )}
         </div>
 
         <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
