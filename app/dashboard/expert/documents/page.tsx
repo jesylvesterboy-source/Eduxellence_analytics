@@ -135,13 +135,19 @@ export default function ExpertDocumentsPage() {
       return;
     }
 
+    // FIXED: Added all 10 parameters to fn_request_document_replacement
     const { error } = replacingId
       ? await supabase.rpc("fn_request_document_replacement", {
           p_old_document_id: replacingId,
+          p_label: label || null,
           p_new_file_path: path,
           p_new_file_name: file.name,
           p_new_file_size: file.size,
-          p_label: label || null,
+          p_credential_type_id: null,
+          p_issuing_organization: null,
+          p_issue_date: null,
+          p_expiry_date: null,
+          p_no_expiry: false,
         })
       : await supabase.rpc("fn_upload_document", {
           p_doc_type: docType,

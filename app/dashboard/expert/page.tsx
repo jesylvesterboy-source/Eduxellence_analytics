@@ -23,6 +23,21 @@ export default async function ExpertDashboard() {
   if (profile?.role !== "expert") redirect("/dashboard");
   if (profile?.application_status !== "approved") redirect("/dashboard/expert/apply");
 
+  // Fetch profile photo
+  const { data: photoDoc } = await supabase
+    .from("expert_documents")
+    .select("file_path")
+    .eq("expert_id", user.id)
+    .eq("doc_type", "profile_photo")
+    .eq("lifecycle_status", "current")
+    .maybeSingle();
+
+  let photoUrl: string | null = null;
+  if (photoDoc?.file_path) {
+    const { data: signed } = await supabase.storage.from("expert-applications").createSignedUrl(photoDoc.file_path, 60 * 60);
+    photoUrl = signed?.signedUrl ?? null;
+  }
+
   const { data: projects } = await supabase
     .from("projects")
     .select("id, title, status, deadline, created_at")
@@ -100,12 +115,30 @@ export default async function ExpertDashboard() {
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         <BackHomeBar backHref="/" backLabel="Back to Home" />
+        
+        {/* UPDATED: Header with clickable profile photo linking to documents */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-          <div>
-            <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem" }}>
-              Welcome, {profile?.full_name || "Expert"}
-            </h1>
-            <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Your assigned projects</p>
+          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+            <Link href="/dashboard/expert/documents" className="expert-photo-link" title="Manage profile photo">
+              <div className="photo-circle">
+                {photoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={photoUrl} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem", color: "var(--muted)" }}>
+                    {(profile?.full_name || "?").charAt(0)}
+                  </div>
+                )}
+                <span className="photo-overlay">📷</span>
+              </div>
+              <span className="photo-caption">Manage Photo</span>
+            </Link>
+            <div>
+              <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem" }}>
+                Welcome, {profile?.full_name || "Expert"}
+              </h1>
+              <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>Your assigned projects</p>
+            </div>
           </div>
           <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
             <Link

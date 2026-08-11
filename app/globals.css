@@ -94,6 +94,51 @@ nav {
 .dropdown:hover .dropdown-content { display: block; }
 .dropdown:hover .drop-trigger { color: var(--gold); }
 
+/* EXPERT PHOTO LINK - Latest version */
+.expert-photo-link {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  text-decoration: none;
+}
+
+.expert-photo-link .photo-circle {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--cream-dark);
+  flex-shrink: 0;
+}
+
+.expert-photo-link .photo-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.1rem;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.expert-photo-link:hover .photo-overlay {
+  opacity: 1;
+}
+
+.expert-photo-link .photo-caption {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--gold-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* HERO (homepage) */
 .hero {
   min-height: 70vh;
