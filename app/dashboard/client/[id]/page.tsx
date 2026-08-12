@@ -531,6 +531,7 @@ export default function ClientProjectDetail() {
 
                   <div style={{ marginTop: "0.75rem" }}>
                     <PaymentMethodSelector
+                      projectId={projectId}
                       amountUsd={m.amount}
                       ngnRate={quotation?.usd_to_ngn_rate ?? null}
                       userEmail={userEmail}

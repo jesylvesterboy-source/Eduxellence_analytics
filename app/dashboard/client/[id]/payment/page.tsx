@@ -113,6 +113,7 @@ export default function PaymentPage() {
         </p>
 
         <PaymentMethodSelector
+          projectId={projectId}
           amountUsd={quotation.amount}
           ngnRate={quotation.usd_to_ngn_rate}
           userEmail={userEmail}
