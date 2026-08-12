@@ -462,22 +462,19 @@ export default function AdminExpertProfilePage() {
           )}
         </Section>
 
-        {/* PAYOUT ACCOUNT */}
+        {/* PAYOUT ACCOUNT - UPDATED with method, status, and masked account details */}
         <Section title="Payout Account">
           {payoutProfile ? (
-            <div style={{ fontSize: "0.85rem" }}>
-              <p><strong>{payoutProfile.account_name}</strong> - {payoutProfile.bank_name || payoutProfile.method}</p>
-              <p style={{ fontFamily: "monospace", color: "var(--muted)" }}>
-                {payoutProfile.account_number.length > 4 ? "****" + payoutProfile.account_number.slice(-4) : payoutProfile.account_number} - {payoutProfile.currency}
-              </p>
-              <p style={{ color: "#1e8449", fontWeight: 600, fontSize: "0.8rem", marginTop: "0.3rem" }}>Verified</p>
+            <div style={{ marginTop: "0.75rem", fontSize: "0.8rem", background: "var(--cream-dark)", borderRadius: "6px", padding: "0.6rem 0.8rem" }}>
+              <strong style={{ textTransform: "capitalize" }}>{payoutProfile.method.replace("_", " ")}</strong>
+              {" · "}
+              <span style={{ color: payoutProfile.status === "verified" ? "#1e8449" : "var(--gold-dark)", fontWeight: 600, textTransform: "capitalize" }}>{payoutProfile.status.replace("_", " ")}</span>
+              <div style={{ color: "var(--muted)", marginTop: "0.2rem" }}>
+                {payoutProfile.account_name} — {payoutProfile.bank_name || payoutProfile.method} · ****{payoutProfile.account_number.slice(-4)} · {payoutProfile.currency}
+              </div>
             </div>
           ) : (
-            <p style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
-              No verified payout account yet. Check{" "}
-              <a href="/dashboard/admin/payout-profiles" style={{ color: "var(--gold-dark)" }}>Payout Profile Verification</a>{" "}
-              for pending submissions.
-            </p>
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.75rem" }}>No payout method registered.</p>
           )}
         </Section>
 

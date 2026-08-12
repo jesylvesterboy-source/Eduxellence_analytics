@@ -51,112 +51,33 @@ export default async function AdminDashboard() {
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
         <BackHomeBar backHref="/" backLabel="Back to Home" />
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
+        
+        {/* UPDATED: Header with NavGroup dropdowns */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem", flexWrap: "wrap", gap: "1rem" }}>
           <div>
             <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: "1.8rem" }}>
               Admin Dashboard
             </h1>
             <p style={{ color: "var(--muted)", fontSize: "0.9rem" }}>{profile?.full_name}</p>
           </div>
-          <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-            <Link
-              href="/dashboard/admin/payments"
-              style={{
-                background: "var(--gold)",
-                color: "var(--ink)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Payments
-            </Link>
-            <Link
-              href="/dashboard/admin/promotions"
-              style={{
-                background: "var(--ink)",
-                color: "var(--white)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Promotions
-            </Link>
-            <Link
-              href="/dashboard/admin/experts"
-              style={{
-                background: "#1a73e8",
-                color: "var(--white)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Applications
-            </Link>
-            <Link
-              href="/dashboard/admin/testimonials"
-              style={{
-                background: "var(--gold)",
-                color: "var(--ink)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Testimonials
-            </Link>
-            <Link
-              href="/dashboard/admin/testimonial-recommendations"
-              style={{
-                background: "var(--gold-light)",
-                color: "var(--ink)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Recommendations
-            </Link>
-            <Link
-              href="/dashboard/admin/skills"
-              style={{
-                background: "var(--cream-dark)",
-                color: "var(--ink)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Skills
-            </Link>
-            <Link
-              href="/dashboard/admin/credential-types"
-              style={{
-                background: "var(--gold-light)",
-                color: "var(--ink)",
-                padding: "0.5rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.85rem",
-                fontWeight: 600,
-                textDecoration: "none",
-              }}
-            >
-              Credential Types
-            </Link>
+          <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+            <NavGroup label="Operations" links={[
+              { href: "/dashboard/admin/experts", label: "Experts" },
+              { href: "/dashboard/admin/expert-applications", label: "Expert Applications" },
+              { href: "/dashboard/admin/promotions", label: "Promotions" },
+            ]} />
+            <NavGroup label="Finance" links={[
+              { href: "/dashboard/admin/payments", label: "Payments" },
+              { href: "/dashboard/admin/payout-directory", label: "Expert Payouts" },
+              { href: "/dashboard/admin/payouts", label: "Payout Batches" },
+              { href: "/dashboard/admin/payout-profiles", label: "Payout Profile Verification" },
+            ]} />
+            <NavGroup label="Management" links={[
+              { href: "/dashboard/admin/testimonials", label: "Testimonials" },
+              { href: "/dashboard/admin/testimonial-recommendations", label: "Recommendations" },
+              { href: "/dashboard/admin/skills", label: "Skills" },
+              { href: "/dashboard/admin/credential-types", label: "Credential Types" },
+            ]} />
             <NotificationBell />
             <LogoutButton />
           </div>
@@ -224,6 +145,35 @@ function StatCard({ label, value }: { label: string; value: string | number }) {
     <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "8px", padding: "1rem", textAlign: "center" }}>
       <div style={{ fontSize: "1.4rem", fontWeight: 700, color: "var(--gold-dark)" }}>{value}</div>
       <div style={{ fontSize: "0.7rem", color: "var(--muted)", marginTop: "0.2rem" }}>{label}</div>
+    </div>
+  );
+}
+
+function NavGroup({ label, links }: { label: string; links: { href: string; label: string }[] }) {
+  return (
+    <div className="dropdown">
+      <span
+        className="drop-trigger"
+        style={{
+          background: "var(--cream-dark)",
+          color: "var(--ink)",
+          padding: "0.5rem 1rem",
+          borderRadius: "6px",
+          fontSize: "0.85rem",
+          fontWeight: 600,
+          cursor: "pointer",
+          display: "inline-block",
+        }}
+      >
+        {label} ▾
+      </span>
+      <div className="dropdown-content">
+        {links.map((l) => (
+          <Link key={l.href} href={l.href}>
+            {l.label}
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
