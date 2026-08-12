@@ -71,6 +71,7 @@ export default async function AdminDashboard() {
               { href: "/dashboard/admin/payout-directory", label: "Expert Payouts" },
               { href: "/dashboard/admin/payouts", label: "Payout Batches" },
               { href: "/dashboard/admin/payout-profiles", label: "Payout Profile Verification" },
+              { href: "/dashboard/admin/payout-ledger", label: "Payout Ledger" },
             ]} />
             <NavGroup label="Management" links={[
               { href: "/dashboard/admin/testimonials", label: "Testimonials" },
