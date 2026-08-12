@@ -11,6 +11,8 @@ export default function PaymentMethodSelector({
   bankReference,
   existingPayment,
   onSubmitPayment,
+  projectId,
+  milestoneId,
 }: {
   amountUsd: number;
   ngnRate: number | null;
@@ -18,6 +20,8 @@ export default function PaymentMethodSelector({
   bankReference: string;
   existingPayment: ExistingPayment;
   onSubmitPayment: (method: "flutterwave" | "paystack" | "bank_transfer", bankCurrency: "USD" | "NGN" | null, reference: string, proofFile: File | null) => Promise<{ error?: string }>;
+  projectId: string;
+  milestoneId?: string | null;
 }) {
   const [selectedOption, setSelectedOption] = useState<"flutterwave" | "paystack" | "bank_usd" | "bank_ngn" | null>(null);
   const [gatewayReference, setGatewayReference] = useState<string | null>(null);
@@ -64,6 +68,13 @@ export default function PaymentMethodSelector({
       payment_options: "card,ussd,banktransfer",
       customer: { email: userEmail },
       customizations: { title: "Eduxellence Analytics" },
+      meta: {
+        platform_key: "analytics",
+        project_id: projectId,
+        milestone_id: milestoneId ?? null,
+        expected_amount: amountUsd,
+        expected_currency: "USD",
+      },
       callback: () => {
         setSelectedOption("flutterwave");
         setGatewayReference(ref);
@@ -91,6 +102,13 @@ export default function PaymentMethodSelector({
       amount: amountNgn,
       currency: "NGN",
       ref,
+      metadata: {
+        platform_key: "analytics",
+        project_id: projectId,
+        milestone_id: milestoneId ?? null,
+        expected_amount: amountUsd,
+        expected_currency: "NGN",
+      },
       callback: () => {
         setSelectedOption("paystack");
         setGatewayReference(ref);
