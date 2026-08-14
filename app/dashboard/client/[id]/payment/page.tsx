@@ -120,6 +120,7 @@ export default function PaymentPage() {
           bankReference={project.payment_reference || `EDUX-${projectId}`}
           existingPayment={existingPayment}
           onSubmitPayment={handleSubmitPayment}
+          milestoneId={null}
         />
       </div>
     </div>
