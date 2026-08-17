@@ -61,11 +61,13 @@ export default function NewProjectPage() {
       return;
     }
 
-    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
-    if (admins && admins.length > 0) {
+    const { data: adminIds, error: rpcError } = await supabase.rpc("get_admin_ids");
+    if (rpcError) {
+      console.error("Failed to fetch admin IDs:", rpcError);
+    } else if (adminIds && adminIds.length > 0) {
       await supabase.from("notifications").insert(
-        admins.map((a) => ({
-          user_id: a.id,
+        adminIds.map((id: string) => ({
+          user_id: id,
           title: "New Project Request",
           body: `A new project "${title}" was requested and needs review.`,
           link: `/dashboard/admin/${data.id}`,
