@@ -61,6 +61,18 @@ export default function NewProjectPage() {
       return;
     }
 
+    const { data: admins } = await supabase.from("profiles").select("id").eq("role", "admin");
+    if (admins && admins.length > 0) {
+      await supabase.from("notifications").insert(
+        admins.map((a) => ({
+          user_id: a.id,
+          title: "New Project Request",
+          body: `A new project "${title}" was requested and needs review.`,
+          link: `/dashboard/admin/${data.id}`,
+        }))
+      );
+    }
+
     router.push(`/dashboard/client/${data.id}`);
   }
 
