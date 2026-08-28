@@ -180,7 +180,9 @@ export default function PaymentMethodSelector({
           <div style={{ marginBottom: "0.5rem" }}>
             <strong>USD Account (Raenest):</strong>
             <div style={{ marginTop: "0.2rem", lineHeight: 1.5 }}>
-              Jeremiah Williams Sylvester · Regent Bank · 117120079290 · Checking · Routing 103913434
+              Jeremiah Sylvester · Lead Bank · 219208009565 · Checking · Routing 101019644
+              <br />
+              1801 Main St, Kansas City, MO 64108, USA
             </div>
           </div>
           <div><strong>Reference:</strong> <span style={{ fontFamily: "monospace" }}>{bankReference}</span></div>
