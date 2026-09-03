@@ -153,7 +153,7 @@ export default function Home() {
         <div className="nav-logo">
           Eduxellence <span>Solutions</span>
         </div>
-        <ul className="nav-links">
+        <ul className={"nav-links" + (menuOpen ? " open" : "")} onClick={() => setMenuOpen(false)}>
           <li><Link href="/services" style={{ color: "var(--gold)", fontWeight: 600 }}>Eduxellence Solutions</Link></li>
           <li><a href="#tools">Tools</a></li>
           <li><a href="#contact">Contact</a></li>

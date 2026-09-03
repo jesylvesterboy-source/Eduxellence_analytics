@@ -368,7 +368,25 @@ footer a:hover { text-decoration: underline; }
 /* RESPONSIVE */
 @media (max-width: 768px) {
   .nav-links { display: none; }
+  .nav-links.open {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.25rem;
+    position: fixed;
+    top: 68px;
+    left: 0;
+    right: 0;
+    background: var(--cream);
+    padding: 1.5rem 5%;
+    border-bottom: 1px solid var(--border);
+    box-shadow: var(--shadow);
+    z-index: 99;
+  }
   .hamburger { display: flex; }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
   .contact-grid { grid-template-columns: 1fr; gap: 2rem; }
   .hero-actions { flex-direction: column; align-items: center; }
   .tier-grid { grid-template-columns: 1fr; }
