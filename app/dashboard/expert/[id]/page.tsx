@@ -4,6 +4,8 @@ import { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
+import ConsultationCard from "@/components/consultation/ConsultationCard";
+import ConsultationRoom from "@/components/consultation/ConsultationRoom";
 
 type Message = {
   id: string;
@@ -35,6 +37,8 @@ export default function ExpertProjectDetail() {
   const [review, setReview] = useState<Review | null>(null);
   const [pendingOffer, setPendingOffer] = useState<{ id: string; compensation_amount: number | null } | null>(null);
   const [responding, setResponding] = useState(false);
+  const [consultation, setConsultation] = useState<{ id: string; status: string } | null>(null);
+  const [showConsultationRoom, setShowConsultationRoom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -114,6 +118,15 @@ export default function ExpertProjectDetail() {
     } else {
       setPendingOffer(null);
     }
+
+    const { data: consult } = await supabase
+      .from("project_consultations")
+      .select("id, status")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setConsultation(consult);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -137,6 +150,13 @@ export default function ExpertProjectDetail() {
         { event: "DELETE", schema: "public", table: "messages", filter: `project_id=eq.${projectId}` },
         (payload) => {
           setMessages((prev) => prev.filter((m) => m.id !== (payload.old as Message).id));
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "project_consultations", filter: `project_id=eq.${projectId}` },
+        () => {
+          loadData();
         }
       )
       .subscribe();
@@ -306,6 +326,16 @@ export default function ExpertProjectDetail() {
           </div>
         )}
 
+        <ConsultationCard
+          projectId={projectId}
+          consultationId={consultation?.id ?? null}
+          status={(consultation?.status as any) ?? null}
+          viewerRole="expert"
+          hasExpertAssigned={true}
+          onOpenRoom={() => setShowConsultationRoom(true)}
+          onRefresh={loadData}
+        />
+
         {project.status === "offered" && pendingOffer && (
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontWeight: 600, marginBottom: "0.5rem" }}>New Project Offer</div>
@@ -411,6 +441,20 @@ export default function ExpertProjectDetail() {
           </form>
         </div>
       </div>
+
+      {showConsultationRoom && consultation && (
+        <ConsultationRoom
+          projectId={projectId}
+          consultationId={consultation.id}
+          currentUserId={userId!}
+          isClosed={consultation.status === "closed"}
+          onClose={() => setShowConsultationRoom(false)}
+          onCloseConsultation={() => {
+            setShowConsultationRoom(false);
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }

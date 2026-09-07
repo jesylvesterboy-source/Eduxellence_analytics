@@ -5,6 +5,8 @@ import { useParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
 import PaymentPanel from "../_components/payment-panel";
+import ConsultationCard from "@/components/consultation/ConsultationCard";
+import ConsultationRoom from "@/components/consultation/ConsultationRoom";
 
 type Message = {
   id: string;
@@ -118,6 +120,8 @@ export default function AdminProjectDetail() {
   const [reqSpecialization, setReqSpecialization] = useState("");
   const [matches, setMatches] = useState<MatchResult[]>([]);
   const [matching, setMatching] = useState(false);
+  const [consultation, setConsultation] = useState<{ id: string; status: string } | null>(null);
+  const [showConsultationRoom, setShowConsultationRoom] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const resolveFileLinks = useCallback(
@@ -238,6 +242,15 @@ export default function AdminProjectDetail() {
       setReqUrgency(projFull.required_availability_urgency || "");
       setReqSpecialization(projFull.specialization_notes || "");
     }
+
+    const { data: consult } = await supabase
+      .from("project_consultations")
+      .select("id, status")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setConsultation(consult);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -277,6 +290,13 @@ export default function AdminProjectDetail() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "revision_requests", filter: `project_id=eq.${projectId}` },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "project_consultations", filter: `project_id=eq.${projectId}` },
         () => {
           loadData();
         }
@@ -1031,6 +1051,18 @@ export default function AdminProjectDetail() {
               </div>
             )}
 
+            {project.expert_id && (
+              <ConsultationCard
+                projectId={projectId}
+                consultationId={consultation?.id ?? null}
+                status={(consultation?.status as any) ?? null}
+                viewerRole="admin"
+                hasExpertAssigned={!!project.expert_id}
+                onOpenRoom={() => setShowConsultationRoom(true)}
+                onRefresh={loadData}
+              />
+            )}
+
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Milestones</div>
 
@@ -1143,6 +1175,20 @@ export default function AdminProjectDetail() {
           </div>
         </div>
       </div>
+
+      {showConsultationRoom && consultation && (
+        <ConsultationRoom
+          projectId={projectId}
+          consultationId={consultation.id}
+          currentUserId={userId!}
+          isClosed={consultation.status === "closed"}
+          onClose={() => setShowConsultationRoom(false)}
+          onCloseConsultation={() => {
+            setShowConsultationRoom(false);
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }

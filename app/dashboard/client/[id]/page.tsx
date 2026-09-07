@@ -6,6 +6,8 @@ import Script from "next/script";
 import { createClient } from "@/lib/supabase/client";
 import BackHomeBar from "../../_components/back-home-bar";
 import PaymentMethodSelector from "@/components/payments/PaymentMethodSelector";
+import ConsultationCard from "@/components/consultation/ConsultationCard";
+import ConsultationRoom from "@/components/consultation/ConsultationRoom";
 
 type Message = {
   id: string;
@@ -79,6 +81,8 @@ export default function ClientProjectDetail() {
   const [workCommenced, setWorkCommenced] = useState(false);
   const [cancellationRequest, setCancellationRequest] = useState<{ id: string; status: string; reason: string; created_at: string; admin_notes: string | null } | null>(null);
   const [resolutions, setResolutions] = useState<{ refund_amount: number; expert_compensation_amount: number; resolution_type: string }[]>([]);
+  const [consultation, setConsultation] = useState<{ id: string; status: string } | null>(null);
+  const [showConsultationRoom, setShowConsultationRoom] = useState(false);
 
   const resolveFileLinks = useCallback(
     async (msgs: Message[]) => {
@@ -180,6 +184,15 @@ export default function ClientProjectDetail() {
         .eq("cancellation_request_id", cancelReq.id);
       setResolutions(res || []);
     }
+
+    const { data: consult } = await supabase
+      .from("project_consultations")
+      .select("id, status")
+      .eq("project_id", projectId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    setConsultation(consult);
   }, [projectId, supabase, resolveFileLinks]);
 
   useEffect(() => {
@@ -208,6 +221,13 @@ export default function ClientProjectDetail() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "quotations", filter: `project_id=eq.${projectId}` },
+        () => {
+          loadData();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "project_consultations", filter: `project_id=eq.${projectId}` },
         () => {
           loadData();
         }
@@ -427,6 +447,16 @@ export default function ClientProjectDetail() {
         <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
           Status: <strong style={{ textTransform: "capitalize" }}>{project.status.replace("_", " ")}</strong>
         </p>
+
+        <ConsultationCard
+          projectId={projectId}
+          consultationId={consultation?.id ?? null}
+          status={(consultation?.status as any) ?? null}
+          viewerRole="client"
+          hasExpertAssigned={!!project.expert_id}
+          onOpenRoom={() => setShowConsultationRoom(true)}
+          onRefresh={loadData}
+        />
 
         {/* ADDED: Cancellation request UI - Active request status */}
         {cancellationRequest && !["rejected"].includes(cancellationRequest.status) && (
@@ -743,6 +773,20 @@ export default function ClientProjectDetail() {
           </form>
         </div>
       </div>
+
+      {showConsultationRoom && consultation && (
+        <ConsultationRoom
+          projectId={projectId}
+          consultationId={consultation.id}
+          currentUserId={userId!}
+          isClosed={consultation.status === "closed"}
+          onClose={() => setShowConsultationRoom(false)}
+          onCloseConsultation={() => {
+            setShowConsultationRoom(false);
+            loadData();
+          }}
+        />
+      )}
     </div>
   );
 }
