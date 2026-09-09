@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/email/resend";
 
 const ADMIN_EMAIL = "j.sylvester@eduxellence.org";
-const SITE_URL = "https://analytics.eduxellence.org";
+const SITE_URL = "https://experts.eduxellence.org";
 
 function getServiceClient() {
   return createClient(

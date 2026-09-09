@@ -334,9 +334,10 @@ export default function Home() {
         </p>
         <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
           <a href="https://stats.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>stats</a>{" "}
-          <a href="https://analytics.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>analytics</a>{" "}
+          <a href="https://experts.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>experts</a>{" "}
           <a href="https://clean.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>clean</a>{" "}
-          <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>results</a>
+          <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>results</a>{" "}
+          <Link href="/sitemap" style={{ color: "rgba(255,255,255,0.4)" }}>Sitemap</Link>
         </p>
       </footer>
     </>

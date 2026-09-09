@@ -17,26 +17,17 @@ const dmSans = DM_Sans({
 
 // ✅ Comprehensive SEO & Social Sharing Metadata
 export const metadata: Metadata = {
-  metadataBase: new URL("https://analytics.eduxellence.org"),
+  metadataBase: new URL("https://experts.eduxellence.org"),
   title: {
-    default: "Eduxellence Analytics | Data-Driven Insights & Educational Analytics",
-    template: "%s | Eduxellence Analytics",
+    default: "Eduxellence Experts | Freelance Data Analysts & Software Experts",
+    template: "%s | Eduxellence Experts",
   },
-  description: "Advanced educational data analytics, performance metrics, predictive insights, and institutional reporting tools powered by Eduxellence Solutions.",
-  keywords: [
-    "education analytics",
-    "school data analytics",
-    "academic performance tracking",
-    "institutional reporting",
-    "predictive student analytics",
-    "eduxellence analytics",
-    "data-driven insights"
-  ],
-  authors: [{ name: "Eduxellence Solutions", url: "https://analytics.eduxellence.org" }],
+  description: "Connect with verified data analysts, agronomists, and software development experts on the Eduxellence platform.",
+  authors: [{ name: "Eduxellence Solutions", url: "https://experts.eduxellence.org" }],
   creator: "Eduxellence Solutions",
   publisher: "Eduxellence Solutions",
   alternates: {
-    canonical: "https://analytics.eduxellence.org",
+    canonical: "https://experts.eduxellence.org",
   },
   robots: {
     index: true,
@@ -52,23 +43,23 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://analytics.eduxellence.org",
-    title: "Eduxellence Analytics | Data-Driven Educational Insights",
-    description: "Advanced institutional performance metrics, student progress analytics, and custom data visualization dashboards.",
-    siteName: "Eduxellence Analytics",
+    url: "https://experts.eduxellence.org",
+    title: "Eduxellence Experts",
+    description: "Connect with verified data analysts and software development experts.",
+    siteName: "Eduxellence Experts",
     images: [
       {
         url: "/Eduxellence.ico",
         width: 512,
         height: 512,
-        alt: "Eduxellence Analytics Logo",
+        alt: "Eduxellence Experts Logo",
       },
     ],
   },
   twitter: {
-    card: "summary",
-    title: "Eduxellence Analytics | Data-Driven Insights",
-    description: "Transform raw educational data into actionable insights for institutional growth.",
+    card: "summary_large_image",
+    title: "Eduxellence Experts",
+    description: "Connect with verified data analysts and software development experts.",
     images: ["/Eduxellence.ico"],
   },
   icons: {

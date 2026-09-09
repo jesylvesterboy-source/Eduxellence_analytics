@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { sendEmail } from "@/lib/email/resend";
 
-const SITE_URL = "https://analytics.eduxellence.org";
+const SITE_URL = "https://experts.eduxellence.org";
 
 function getServiceClient() {
   return createClient(
