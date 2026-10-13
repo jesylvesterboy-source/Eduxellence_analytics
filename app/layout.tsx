@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, DM_Sans } from "next/font/google";
 import "./globals.css";
+import SiteFooter from "./components/SiteFooter";
 
 // ✅ Load Google Fonts via Next.js Font Optimization for better performance & zero layout shift
 const playfair = Playfair_Display({
@@ -82,7 +83,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${playfair.variable} ${dmSans.variable}`}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <SiteFooter />
+      </body>
     </html>
   );
 }

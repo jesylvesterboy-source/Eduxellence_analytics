@@ -266,12 +266,21 @@ export default function Home() {
       <section id="contact" className="contact-bg">
         <div className="section-head center">
           <span className="section-label">Get In Touch</span>
-          <h2 className="section-title">Need a Solution?</h2>
-          <p className="section-sub">Reach out and let&apos;s discuss your needs.</p>
+          <h2 className="section-title">Contact &amp; Support</h2>
+          <p className="section-sub">
+            Need help or have a question? Contact our support team for assistance, enquiries or feedback.
+          </p>
         </div>
         <div className="contact-grid">
           <div>
             <div className="contact-links">
+              <a href="tel:+2348135980311" className="contact-link">
+                <div className="contact-link-icon">P</div>
+                <div className="contact-link-text">
+                  <div className="contact-link-label">Phone Support</div>
+                  <div className="contact-link-value">+234 813 598 0311</div>
+                </div>
+              </a>
               <a href="https://wa.me/2348135980311?text=Hello%2C%20I%20need%20help%20with%20a%20project" target="_blank" rel="noopener noreferrer" className="contact-link">
                 <div className="contact-link-icon">W</div>
                 <div className="contact-link-text">
@@ -321,25 +330,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* FOOTER */}
-      <footer>
-        <p style={{ marginBottom: "0.5rem", fontFamily: "'Playfair Display',serif", fontSize: "1rem", color: "rgba(255,255,255,0.7)" }}>
-          Eduxellence <strong>Solutions</strong>
-        </p>
-        <p>
-          Copyright 2025 Eduxellence Solutions. All rights reserved. - Abuja, Nigeria -{" "}
-          <a href="mailto:eduxellencesolutions@gmail.com">eduxellencesolutions@gmail.com</a> -{" "}
-          <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer">results.eduxellence.org</a>
-        </p>
-        <p style={{ marginTop: "0.5rem", fontSize: "0.75rem", color: "rgba(255,255,255,0.3)" }}>
-          <a href="https://stats.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>stats</a>{" "}
-          <a href="https://experts.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>experts</a>{" "}
-          <a href="https://clean.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>clean</a>{" "}
-          <a href="https://results.eduxellence.org" target="_blank" rel="noopener noreferrer" style={{ color: "rgba(255,255,255,0.4)" }}>results</a>{" "}
-          <Link href="/sitemap" style={{ color: "rgba(255,255,255,0.4)" }}>Sitemap</Link>
-        </p>
-      </footer>
     </>
   );
 }
