@@ -61,7 +61,7 @@ export default function PaymentMethodSelector({
     }
     const ref = `EDUX-FLW-${Date.now()}`;
     w.FlutterwaveCheckout({
-      public_key: "FLWPUBK-43be978dfdcacd9b15921ca48f1e78b8-X",
+      public_key: "FLWPUBK-af98485986ce74ca3ac2d0f7d3d17bd6-X",
       isDebugMode: false,
       onStagingEnv: false,
       tx_ref: ref,
