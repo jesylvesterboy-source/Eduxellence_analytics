@@ -102,7 +102,7 @@ export default function PaymentPage() {
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
-      <Script src="https://checkout.flutterwave.com/v3.js" strategy="afterInteractive" />
+      <Script src="https://checkout.flutterwave.com/v3.js?v=3" strategy="afterInteractive" />
       <Script src="https://js.paystack.co/v1/inline.js" strategy="afterInteractive" />
 
       <div style={{ maxWidth: "600px", margin: "0 auto" }}>
