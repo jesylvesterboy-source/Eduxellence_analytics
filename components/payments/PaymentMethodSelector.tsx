@@ -179,7 +179,7 @@ export default function PaymentMethodSelector({
       <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1rem" }}>
         <div style={{ fontWeight: 600, marginBottom: "0.5rem", fontSize: "0.85rem" }}>Pay by Bank Transfer</div>
         <div style={{ background: "var(--cream-dark)", borderRadius: "8px", padding: "0.85rem", marginBottom: "0.75rem", fontSize: "0.78rem" }}>
-          <div style={{ marginBottom: "0.5rem" }}>
+          <div style={{ marginBottom: "0.75rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--border)" }}>
             <strong>USD Account (Raenest):</strong>
             <div style={{ marginTop: "0.2rem", lineHeight: 1.5 }}>
               Jeremiah Sylvester · Lead Bank · 219208009565 · Checking · Routing 101019644
@@ -187,7 +187,22 @@ export default function PaymentMethodSelector({
               1801 Main St, Kansas City, MO 64108, USA
             </div>
           </div>
-          <div><strong>Reference:</strong> <span style={{ fontFamily: "monospace" }}>{bankReference}</span></div>
+          <div style={{ marginBottom: "0.75rem", paddingBottom: "0.75rem", borderBottom: "1px solid var(--border)" }}>
+            <strong>NGN Account (Raenest / Kredi Money MFB):</strong>
+            <div style={{ marginTop: "0.2rem", lineHeight: 1.5 }}>
+              Account Name: Kredi Money Mfb Ltd
+              <br />
+              Beneficiary: Raenest / Jeremiah Williams Sylvester
+              <br />
+              Account Number: 1842639663
+            </div>
+          </div>
+          <div>
+            <strong>Reference:</strong> <span style={{ fontFamily: "monospace" }}>{bankReference}</span>
+            <div style={{ marginTop: "0.3rem", fontSize: "0.72rem", color: "var(--muted)" }}>
+              Please include this reference in your transfer narration so we can match your payment to your project.
+            </div>
+          </div>
         </div>
         <div style={{ display: "flex", gap: "0.5rem" }}>
           <button onClick={() => chooseBankTransfer("USD")} style={{ flex: 1, background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.5rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.78rem", cursor: "pointer" }}>
