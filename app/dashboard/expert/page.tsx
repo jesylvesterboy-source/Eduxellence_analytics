@@ -16,7 +16,7 @@ export default async function ExpertDashboard() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("full_name, role, expert_level_id, application_status")
+    .select("full_name, role, expert_level_id, application_status, country_code, region_name, city, timezone, timezone_confirmed")
     .eq("id", user.id)
     .single();
 
@@ -102,7 +102,7 @@ export default async function ExpertDashboard() {
     assigned: "Newly Assigned",
     offered: "Offer Pending Your Response",
     in_progress: "In Progress",
-    submitted: "Submitted — Awaiting Admin QA",
+    submitted: "Submitted â€” Awaiting Admin QA",
     qa_review: "Admin Reviewing",
     delivered: "Delivered to Client",
     revision: "Revision Requested",
@@ -111,11 +111,35 @@ export default async function ExpertDashboard() {
     declined: "Declined",
   };
 
+  // Location completeness (non-blocking). Used only to show a reminder.
+  const noRegionCountries = ["SG","HK","MO","LU","MT","BH","QA","KW","AE","BN","MV","SC","MU"];
+  const regionRequired = profile?.country_code ? !noRegionCountries.includes(profile.country_code) : true;
+  const locationComplete =
+    !!profile?.country_code &&
+    !!profile?.city &&
+    !!profile?.timezone &&
+    !!profile?.timezone_confirmed &&
+    (!regionRequired || !!profile?.region_name);
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "900px", margin: "0 auto" }}>
         <BackHomeBar backHref="/" backLabel="Back to Home" />
-        
+
+        {profile?.application_status === "approved" && !locationComplete && (
+          <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1rem 1.25rem", marginBottom: "1.5rem", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "1rem", flexWrap: "wrap" }}>
+            <span style={{ fontSize: "0.85rem" }}>
+              Complete your location and confirm your timezone to become eligible for task assignments.
+            </span>
+            <Link
+              href="/dashboard/expert/profile"
+              style={{ background: "var(--ink)", color: "var(--white)", padding: "0.45rem 1rem", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none", whiteSpace: "nowrap" }}
+            >
+              Complete Location
+            </Link>
+          </div>
+        )}
+
         {/* UPDATED: Header with clickable profile photo linking to documents */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -129,7 +153,7 @@ export default async function ExpertDashboard() {
                     {(profile?.full_name || "?").charAt(0)}
                   </div>
                 )}
-                <span className="photo-overlay">📷</span>
+                <span className="photo-overlay">ðŸ“·</span>
               </div>
               <span className="photo-caption">Manage Photo</span>
             </Link>
@@ -197,6 +221,20 @@ export default async function ExpertDashboard() {
             >
               Capability
             </Link>
+            <Link
+              href="/dashboard/expert/profile"
+              style={{
+                background: "var(--cream-dark)",
+                color: "var(--ink)",
+                padding: "0.5rem 1rem",
+                borderRadius: "6px",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                textDecoration: "none",
+              }}
+            >
+              My Location
+            </Link>
             <NotificationBell />
             <LogoutButton />
           </div>
@@ -207,7 +245,7 @@ export default async function ExpertDashboard() {
             <div style={{ fontSize: "1.8rem", fontWeight: 700, color: "var(--gold-dark)" }}>{avgRating}</div>
             <div>
               <div style={{ fontSize: "1rem", color: "var(--gold)" }}>
-                {"★".repeat(Math.round(Number(avgRating)))}{"☆".repeat(5 - Math.round(Number(avgRating)))}
+                {"â˜…".repeat(Math.round(Number(avgRating)))}{"â˜†".repeat(5 - Math.round(Number(avgRating)))}
               </div>
               <div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
                 Based on {reviewCount} review{reviewCount > 1 ? "s" : ""}
@@ -236,7 +274,7 @@ export default async function ExpertDashboard() {
             {nextLevel ? (
               <>
                 <div style={{ fontSize: "0.85rem", marginBottom: "0.75rem" }}>
-                  Next: <strong>{nextLevel.level_name}</strong> — {Math.round(nextLevel.revenue_share * 100)}% share
+                  Next: <strong>{nextLevel.level_name}</strong> â€” {Math.round(nextLevel.revenue_share * 100)}% share
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.6rem", fontSize: "0.8rem" }}>
                   <ProgressRow label="Projects" value={stats.projects_count} target={nextLevel.min_projects} />
@@ -249,7 +287,7 @@ export default async function ExpertDashboard() {
                 (stats.avg_rating ?? 0) >= nextLevel.min_rating &&
                 (stats.on_time_pct ?? 0) >= nextLevel.min_on_time_pct ? (
                   <p style={{ fontSize: "0.8rem", color: "#1e8449", fontWeight: 600, marginTop: "0.9rem" }}>
-                    🎯 You&apos;ve met the requirements for {nextLevel.level_name}. Your promotion is awaiting Admin review.
+                    ðŸŽ¯ You&apos;ve met the requirements for {nextLevel.level_name}. Your promotion is awaiting Admin review.
                   </p>
                 ) : (
                   <p style={{ fontSize: "0.75rem", color: "var(--muted)", marginTop: "0.9rem" }}>
@@ -259,7 +297,7 @@ export default async function ExpertDashboard() {
               </>
             ) : (
               <p style={{ fontSize: "0.85rem", color: "var(--gold-dark)", fontWeight: 600 }}>
-                You&apos;ve reached the highest level — Elite Expert. 🎉
+                You&apos;ve reached the highest level â€” Elite Expert. ðŸŽ‰
               </p>
             )}
           </div>
@@ -300,10 +338,10 @@ export default async function ExpertDashboard() {
                     <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>{p.title}</div>
                     <div style={{ fontSize: "0.8rem", color: "var(--muted)" }}>
                       {statusLabels[p.status] || p.status}
-                      {p.deadline ? ` · Due ${new Date(p.deadline).toLocaleDateString()}` : ""}
+                      {p.deadline ? ` Â· Due ${new Date(p.deadline).toLocaleDateString()}` : ""}
                     </div>
                   </div>
-                  <span style={{ color: "var(--gold)", fontSize: "0.85rem" }}>Open →</span>
+                  <span style={{ color: "var(--gold)", fontSize: "0.85rem" }}>Open â†’</span>
                 </div>
               </Link>
             ))}

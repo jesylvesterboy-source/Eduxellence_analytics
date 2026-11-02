@@ -21,6 +21,11 @@ export default function AdminExpertsDirectoryPage() {
   const [levels, setLevels] = useState<Record<number, Level>>({});
   const [photoLinks, setPhotoLinks] = useState<Record<string, string>>({});
   const [search, setSearch] = useState("");
+  const [filterCountry, setFilterCountry] = useState("");
+  const [filterRegion, setFilterRegion] = useState("");
+  const [filterCity, setFilterCity] = useState("");
+  const [locationFilteredIds, setLocationFilteredIds] = useState<string[] | null>(null);
+  const [filtering, setFiltering] = useState(false);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -59,7 +64,30 @@ export default function AdminExpertsDirectoryPage() {
     load();
   }, [load]);
 
+  const applyLocationFilter = useCallback(async () => {
+    if (!filterCountry && !filterRegion && !filterCity) {
+      setLocationFilteredIds(null);
+      return;
+    }
+    setFiltering(true);
+    const { data, error } = await supabase.rpc("search_experts", {
+      p_country_code: filterCountry || null,
+      p_region_code: filterRegion || null,
+      p_city: filterCity || null,
+      p_limit: 200,
+      p_offset: 0,
+    });
+    setFiltering(false);
+    if (error) {
+      alert("Location filter failed: " + error.message);
+      setLocationFilteredIds(null);
+      return;
+    }
+    setLocationFilteredIds((data || []).map((r: { id: string }) => r.id));
+  }, [supabase, filterCountry, filterRegion, filterCity]);
+
   const filtered = experts.filter((e) => {
+    if (locationFilteredIds && !locationFilteredIds.includes(e.id)) return false;
     const q = search.toLowerCase();
     if (!q) return true;
     return (
@@ -91,6 +119,42 @@ export default function AdminExpertsDirectoryPage() {
           onChange={(e) => setSearch(e.target.value)}
           style={{ width: "100%", padding: "0.6rem 0.9rem", borderRadius: "8px", border: "1px solid var(--border)", marginBottom: "1.5rem", fontSize: "0.9rem" }}
         />
+
+        <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", flexWrap: "wrap" }}>
+          <select value={filterCountry} onChange={(e) => setFilterCountry(e.target.value)} style={filterSelectStyle}>
+            <option value="">All countries</option>
+            <option value="NG">Nigeria</option>
+            <option value="GH">Ghana</option>
+            <option value="KE">Kenya</option>
+            <option value="ZA">South Africa</option>
+            <option value="GB">United Kingdom</option>
+            <option value="US">United States</option>
+            <option value="CA">Canada</option>
+            <option value="AE">United Arab Emirates</option>
+            <option value="IN">India</option>
+            <option value="AU">Australia</option>
+          </select>
+          <input
+            placeholder="Region code (e.g. NG-BA)"
+            value={filterRegion}
+            onChange={(e) => setFilterRegion(e.target.value.toUpperCase())}
+            style={{ ...filterSelectStyle, width: "180px" }}
+          />
+          <input
+            placeholder="City"
+            value={filterCity}
+            onChange={(e) => setFilterCity(e.target.value)}
+            style={{ ...filterSelectStyle, width: "160px" }}
+          />
+          <button onClick={applyLocationFilter} disabled={filtering} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.55rem 1rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.82rem", cursor: filtering ? "not-allowed" : "pointer", opacity: filtering ? 0.6 : 1 }}>
+            {filtering ? "Filtering…" : "Apply location filter"}
+          </button>
+          {(filterCountry || filterRegion || filterCity) && (
+            <button onClick={() => { setFilterCountry(""); setFilterRegion(""); setFilterCity(""); setLocationFilteredIds(null); }} style={{ background: "transparent", border: "1px solid var(--border)", padding: "0.55rem 1rem", borderRadius: "6px", fontSize: "0.82rem", cursor: "pointer" }}>
+              Clear
+            </button>
+          )}
+        </div>
 
         {filtered.length === 0 ? (
           <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "2rem", textAlign: "center", color: "var(--muted)" }}>
@@ -140,3 +204,11 @@ export default function AdminExpertsDirectoryPage() {
     </div>
   );
 }
+
+const filterSelectStyle: React.CSSProperties = {
+  padding: "0.55rem 0.75rem",
+  borderRadius: "6px",
+  border: "1px solid var(--border)",
+  fontSize: "0.85rem",
+  background: "var(--white)",
+};

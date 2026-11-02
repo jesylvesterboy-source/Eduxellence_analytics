@@ -208,6 +208,14 @@ export default function ExpertApplyPage() {
       if (error) throw error;
 
       setStatus("submitted");
+
+      // Location completion: the apply form only captures country_code.
+      // Send the expert to the profile page so they can add region, city
+      // and confirm their timezone. Deferred briefly so the success state
+      // registers first.
+      setTimeout(() => {
+        router.push("/dashboard/expert/profile");
+      }, 1500);
     } catch (err: any) {
       alert("Submission failed: " + err.message);
     } finally {

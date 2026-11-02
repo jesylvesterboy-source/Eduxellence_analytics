@@ -14,6 +14,11 @@ type Overview = {
   level_name: string | null;
   badge: string | null;
   revenue_share: number | null;
+  country_code: string | null;
+  region_name: string | null;
+  city: string | null;
+  timezone: string | null;
+  timezone_confirmed: boolean;
 };
 
 type CapabilityProfile = {
@@ -73,7 +78,7 @@ export default function AdminExpertProfilePage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("full_name, email, bio, expertise, application_status, expert_level_id, expert_levels!profiles_expert_level_id_fkey(level_name, badge, revenue_share, level_order)")
+      .select("full_name, email, bio, expertise, application_status, expert_level_id, country_code, region_name, city, timezone, timezone_confirmed, expert_levels!profiles_expert_level_id_fkey(level_name, badge, revenue_share, level_order)")
       .eq("id", expertId)
       .single();
 
@@ -87,6 +92,11 @@ export default function AdminExpertProfilePage() {
       level_name: currentLevel?.level_name ?? null,
       badge: currentLevel?.badge ?? null,
       revenue_share: currentLevel?.revenue_share ?? null,
+      country_code: profile?.country_code ?? null,
+      region_name: profile?.region_name ?? null,
+      city: profile?.city ?? null,
+      timezone: profile?.timezone ?? null,
+      timezone_confirmed: profile?.timezone_confirmed ?? false,
     });
 
     const { data: cap } = await supabase.from("expert_capability_profiles").select("*").eq("expert_id", expertId).maybeSingle();
@@ -253,6 +263,19 @@ export default function AdminExpertProfilePage() {
     return <div style={{ padding: "3rem", textAlign: "center", color: "var(--muted)" }}>Loading...</div>;
   }
 
+  // ISO code → human-readable country name, minimal list matching the
+  // curated set used across the platform.
+  const COUNTRY_NAMES: Record<string, string> = {
+    NG: "Nigeria", GH: "Ghana", KE: "Kenya", ZA: "South Africa", EG: "Egypt",
+    MA: "Morocco", GB: "United Kingdom", US: "United States", CA: "Canada",
+    IE: "Ireland", DE: "Germany", FR: "France", NL: "Netherlands", ES: "Spain",
+    IT: "Italy", PT: "Portugal", AE: "United Arab Emirates", SA: "Saudi Arabia",
+    IN: "India", CN: "China", AU: "Australia", NZ: "New Zealand",
+  };
+  const countryDisplay = overview.country_code
+    ? COUNTRY_NAMES[overview.country_code] ?? overview.country_code
+    : null;
+
   const growthMet = nextLevel
     ? stats.projects_count >= nextLevel.min_projects &&
       stats.reviews_count >= nextLevel.min_reviews &&
@@ -296,6 +319,37 @@ export default function AdminExpertProfilePage() {
             )}
           </div>
         </div>
+
+        {/* LOCATION — internal routing metadata, never shown to clients */}
+        <Section title="Location (internal routing only)">
+          <div style={{ fontSize: "0.82rem", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem" }}>
+            <div>
+              <div style={{ color: "var(--muted)", fontSize: "0.72rem", marginBottom: "0.15rem" }}>Country</div>
+              <div style={{ fontWeight: 600 }}>{countryDisplay ?? "—"}</div>
+            </div>
+            <div>
+              <div style={{ color: "var(--muted)", fontSize: "0.72rem", marginBottom: "0.15rem" }}>Region / State</div>
+              <div style={{ fontWeight: 600 }}>{overview.region_name ?? "—"}</div>
+            </div>
+            <div>
+              <div style={{ color: "var(--muted)", fontSize: "0.72rem", marginBottom: "0.15rem" }}>City</div>
+              <div style={{ fontWeight: 600 }}>{overview.city ?? "—"}</div>
+            </div>
+            <div>
+              <div style={{ color: "var(--muted)", fontSize: "0.72rem", marginBottom: "0.15rem" }}>Timezone</div>
+              <div style={{ fontWeight: 600 }}>{overview.timezone ?? "—"}</div>
+              {overview.timezone && (
+                <div style={{ fontSize: "0.7rem", color: overview.timezone_confirmed ? "#1e8449" : "var(--gold-dark)", marginTop: "0.15rem" }}>
+                  {overview.timezone_confirmed ? "Confirmed by expert" : "Not yet confirmed"}
+                </div>
+              )}
+            </div>
+          </div>
+          <p style={{ fontSize: "0.72rem", color: "var(--muted)", marginTop: "0.75rem" }}>
+            Used only to route in-person tasks, schedule meetings and account for time zones.
+            Never shown to clients and not used for eligibility, ranking or assignment decisions.
+          </p>
+        </Section>
 
         {/* PROFILE PHOTO SECTION - FIXED: added lifecycle_status === "current" filter */}
         {(() => {

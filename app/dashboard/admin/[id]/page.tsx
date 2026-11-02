@@ -17,7 +17,17 @@ type Message = {
   thread_type: string;
 };
 
-type Expert = { id: string; full_name: string | null; email: string | null; revenue_share: number | null };
+type Expert = {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+  revenue_share: number | null;
+  country_code: string | null;
+  region_name: string | null;
+  city: string | null;
+  timezone: string | null;
+  timezone_confirmed: boolean;
+};
 
 type Quotation = {
   id: string;
@@ -79,6 +89,12 @@ type MatchResult = {
   availability_score: number;
   history_score: number;
   total_score: number;
+  // Populated client-side from profiles after the RPC returns.
+  // Not part of fn_match_experts_for_project output.
+  country_code?: string | null;
+  region_name?: string | null;
+  city?: string | null;
+  timezone?: string | null;
 };
 
 export default function AdminProjectDetail() {
@@ -119,6 +135,11 @@ export default function AdminProjectDetail() {
   const [reqUrgency, setReqUrgency] = useState("");
   const [reqSpecialization, setReqSpecialization] = useState("");
   const [matches, setMatches] = useState<MatchResult[]>([]);
+  const [filterCountry, setFilterCountry] = useState("");
+  const [filterRegion, setFilterRegion] = useState("");
+  const [filterCity, setFilterCity] = useState("");
+  const [locationFilteredIds, setLocationFilteredIds] = useState<string[] | null>(null);
+  const [filteringExperts, setFilteringExperts] = useState(false);
   const [matching, setMatching] = useState(false);
   const [consultation, setConsultation] = useState<{ id: string; status: string } | null>(null);
   const [showConsultationRoom, setShowConsultationRoom] = useState(false);
@@ -167,7 +188,7 @@ export default function AdminProjectDetail() {
 
     const { data: expertList } = await supabase
       .from("profiles")
-      .select("id, full_name, email, expert_levels!profiles_expert_level_id_fkey(revenue_share)")
+      .select("id, full_name, email, country_code, region_name, city, timezone, timezone_confirmed, expert_levels!profiles_expert_level_id_fkey(revenue_share)")
       .eq("role", "expert")
       .eq("application_status", "approved");
     setExperts(
@@ -176,6 +197,11 @@ export default function AdminProjectDetail() {
         full_name: e.full_name,
         email: e.email,
         revenue_share: e.expert_levels?.revenue_share ?? null,
+        country_code: e.country_code ?? null,
+        region_name: e.region_name ?? null,
+        city: e.city ?? null,
+        timezone: e.timezone ?? null,
+        timezone_confirmed: e.timezone_confirmed ?? false,
       }))
     );
 
@@ -403,6 +429,23 @@ export default function AdminProjectDetail() {
   async function offerToExpert() {
     if (!selectedExpert || !userId) return;
 
+    // Location completeness pre-check. The server (fn_offer_project) enforces
+    // this too; this is only to give the admin the message immediately.
+    const ex = experts.find((e) => e.id === selectedExpert);
+    const noRegionCountries = ["SG","HK","MO","LU","MT","BH","QA","KW","AE","BN","MV","SC","MU"];
+    const regionRequired = ex?.country_code ? !noRegionCountries.includes(ex.country_code) : true;
+    if (
+      !ex ||
+      !ex.country_code ||
+      !ex.city ||
+      !ex.timezone ||
+      !ex.timezone_confirmed ||
+      (regionRequired && !ex.region_name)
+    ) {
+      alert("This expert has not completed or confirmed their location. Ask them to complete their profile before assigning a task.");
+      return;
+    }
+
     const { error } = await supabase.rpc("fn_offer_project", {
       p_project_id: projectId,
       p_expert_id: selectedExpert,
@@ -591,9 +634,66 @@ export default function AdminProjectDetail() {
   async function findExperts() {
     setMatching(true);
     const { data, error } = await supabase.rpc("fn_match_experts_for_project", { p_project_id: projectId, p_limit: 10 });
+    if (error) {
+      setMatching(false);
+      alert(error.message);
+      return;
+    }
+
+    const rows = (data || []) as MatchResult[];
+    const ids = rows.map((r) => r.expert_id);
+
+    // Location is display-only context for the admin. It is fetched in a
+    // separate query and never fed back into the match score.
+    if (ids.length > 0) {
+      const { data: locs } = await supabase
+        .from("profiles")
+        .select("id, country_code, region_name, city, timezone")
+        .in("id", ids);
+
+      const locMap: Record<string, { country_code: string | null; region_name: string | null; city: string | null; timezone: string | null }> = {};
+      (locs || []).forEach((l) => {
+        locMap[l.id] = {
+          country_code: l.country_code ?? null,
+          region_name: l.region_name ?? null,
+          city: l.city ?? null,
+          timezone: l.timezone ?? null,
+        };
+      });
+
+      setMatches(
+        rows.map((r) => ({
+          ...r,
+          ...(locMap[r.expert_id] || { country_code: null, region_name: null, city: null, timezone: null }),
+        }))
+      );
+    } else {
+      setMatches(rows);
+    }
+
     setMatching(false);
-    if (error) { alert(error.message); return; }
-    setMatches(data || []);
+  }
+
+  async function applyExpertLocationFilter() {
+    if (!filterCountry && !filterRegion && !filterCity) {
+      setLocationFilteredIds(null);
+      return;
+    }
+    setFilteringExperts(true);
+    const { data, error } = await supabase.rpc("search_experts", {
+      p_country_code: filterCountry || null,
+      p_region_code: filterRegion || null,
+      p_city: filterCity || null,
+      p_limit: 200,
+      p_offset: 0,
+    });
+    setFilteringExperts(false);
+    if (error) {
+      alert("Location filter failed: " + error.message);
+      setLocationFilteredIds(null);
+      return;
+    }
+    setLocationFilteredIds((data || []).map((r: { id: string }) => r.id));
   }
 
   async function markQaReview() {
@@ -929,6 +1029,12 @@ export default function AdminProjectDetail() {
                         <span style={{ color: "var(--gold-dark)", fontWeight: 700 }}>{m.total_score}% Match</span>
                       </div>
                       <div style={{ fontSize: "0.7rem", color: "var(--muted)" }}>{m.level_name} · ★{m.avg_rating} · {m.completed_projects} projects</div>
+                      {(m.country_code || m.city || m.timezone) && (
+                        <div style={{ fontSize: "0.68rem", color: "var(--muted)", marginTop: "0.2rem" }}>
+                          {[countryLabel(m.country_code), m.region_name, m.city].filter(Boolean).join(", ") || "Location not set"}
+                          {m.timezone ? ` · ${m.timezone}` : ""}
+                        </div>
+                      )}
                       <div style={{ fontSize: "0.68rem", color: "var(--muted)", marginTop: "0.2rem" }}>
                         Skills {m.skills_score}/35 · Category {m.category_score}/20 · Exp {m.experience_score}/15 · Perf {m.performance_score}/10 · Avail {m.availability_score}/10 · History {m.history_score}/10
                       </div>
@@ -991,15 +1097,77 @@ export default function AdminProjectDetail() {
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.25rem" }}>
               <div style={{ fontWeight: 600, marginBottom: "0.75rem", fontSize: "0.9rem" }}>Offer Project to Expert</div>
+
+              {/* Location filter — narrows the candidate list for routing context only. */}
+              <div style={{ display: "flex", gap: "0.4rem", flexWrap: "wrap", marginBottom: "0.5rem" }}>
+                <select
+                  value={filterCountry}
+                  onChange={(e) => setFilterCountry(e.target.value)}
+                  style={filterStyle}
+                >
+                  <option value="">All countries</option>
+                  <option value="NG">Nigeria</option>
+                  <option value="GH">Ghana</option>
+                  <option value="KE">Kenya</option>
+                  <option value="ZA">South Africa</option>
+                  <option value="GB">United Kingdom</option>
+                  <option value="US">United States</option>
+                  <option value="CA">Canada</option>
+                  <option value="AE">United Arab Emirates</option>
+                  <option value="IN">India</option>
+                  <option value="AU">Australia</option>
+                </select>
+                <input
+                  placeholder="Region code (e.g. NG-BA)"
+                  value={filterRegion}
+                  onChange={(e) => setFilterRegion(e.target.value.toUpperCase())}
+                  style={{ ...filterStyle, width: "150px" }}
+                />
+                <input
+                  placeholder="City"
+                  value={filterCity}
+                  onChange={(e) => setFilterCity(e.target.value)}
+                  style={{ ...filterStyle, width: "120px" }}
+                />
+                <button
+                  onClick={applyExpertLocationFilter}
+                  disabled={filteringExperts}
+                  style={{ background: "var(--cream-dark)", border: "1px solid var(--border)", padding: "0.45rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", fontWeight: 600, cursor: filteringExperts ? "not-allowed" : "pointer", opacity: filteringExperts ? 0.6 : 1 }}
+                >
+                  {filteringExperts ? "Filtering…" : "Filter by location"}
+                </button>
+                {(filterCountry || filterRegion || filterCity) && (
+                  <button
+                    onClick={() => { setFilterCountry(""); setFilterRegion(""); setFilterCity(""); setLocationFilteredIds(null); }}
+                    style={{ background: "transparent", border: "1px solid var(--border)", padding: "0.45rem 0.8rem", borderRadius: "6px", fontSize: "0.75rem", cursor: "pointer" }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {locationFilteredIds && (
+                <p style={{ fontSize: "0.72rem", color: "var(--muted)", marginBottom: "0.4rem" }}>
+                  Showing {experts.filter((ex) => locationFilteredIds.includes(ex.id)).length} expert(s) matching the location filter.
+                </p>
+              )}
+
               <select
                 value={selectedExpert}
                 onChange={(e) => setSelectedExpert(e.target.value)}
                 style={{ width: "100%", padding: "0.6rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem", marginBottom: "0.5rem" }}
               >
                 <option value="">Select an expert...</option>
-                {experts.map((ex) => (
-                  <option key={ex.id} value={ex.id}>{ex.full_name || ex.email}</option>
-                ))}
+                {experts
+                  .filter((ex) => !locationFilteredIds || locationFilteredIds.includes(ex.id))
+                  .map((ex) => {
+                    const locParts = [countryLabel(ex.country_code), ex.city].filter(Boolean);
+                    const loc = locParts.length ? ` — ${locParts.join(" / ")}` : "";
+                    return (
+                      <option key={ex.id} value={ex.id}>
+                        {(ex.full_name || ex.email) + loc}
+                      </option>
+                    );
+                  })}
               </select>
               <input
                 type="number"
@@ -1202,3 +1370,23 @@ const actionBtnStyle: React.CSSProperties = {
   cursor: "pointer",
   textAlign: "left",
 };
+
+const filterStyle: React.CSSProperties = {
+  padding: "0.45rem 0.7rem",
+  borderRadius: "6px",
+  border: "1px solid var(--border)",
+  fontSize: "0.78rem",
+  background: "var(--white)",
+};
+
+function countryLabel(code: string | null | undefined): string | null {
+  if (!code) return null;
+  const names: Record<string, string> = {
+    NG: "Nigeria", GH: "Ghana", KE: "Kenya", ZA: "South Africa", EG: "Egypt",
+    MA: "Morocco", GB: "United Kingdom", US: "United States", CA: "Canada",
+    IE: "Ireland", DE: "Germany", FR: "France", NL: "Netherlands", ES: "Spain",
+    IT: "Italy", PT: "Portugal", AE: "United Arab Emirates", SA: "Saudi Arabia",
+    IN: "India", CN: "China", AU: "Australia", NZ: "New Zealand",
+  };
+  return names[code] ?? code;
+}
