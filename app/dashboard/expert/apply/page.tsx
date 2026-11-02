@@ -11,6 +11,31 @@ type SkillDetail = { skill_id: number; years_experience: string; proficiency_lev
 
 const PROFICIENCY_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"];
 
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: "NG", name: "Nigeria" },
+  { code: "GH", name: "Ghana" },
+  { code: "KE", name: "Kenya" },
+  { code: "ZA", name: "South Africa" },
+  { code: "EG", name: "Egypt" },
+  { code: "MA", name: "Morocco" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "IE", name: "Ireland" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "NL", name: "Netherlands" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "PT", name: "Portugal" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "IN", name: "India" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "NZ", name: "New Zealand" },
+];
+
 export default function ExpertApplyPage() {
   const supabase = createClient();
   const router = useRouter();
@@ -30,6 +55,7 @@ export default function ExpertApplyPage() {
   const [skillDetails, setSkillDetails] = useState<Record<number, SkillDetail>>({});
   const [skillSearch, setSkillSearch] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
+  const [countryCode, setCountryCode] = useState<string>("");
 
   const loadStatus = useCallback(async () => {
     const {
@@ -43,7 +69,7 @@ export default function ExpertApplyPage() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("application_status, rejection_reason, role")
+      .select("application_status, rejection_reason, role, country_code")
       .eq("id", user.id)
       .single();
 
@@ -53,6 +79,7 @@ export default function ExpertApplyPage() {
     }
     setStatus(profile.application_status);
     setRejectionReason(profile.rejection_reason);
+    setCountryCode(profile.country_code || "");
 
     const { data: cats, error: catErr } = await supabase.from("solution_categories").select("id, name").eq("is_active", true).order("display_order");
     const { data: skl, error: sklErr } = await supabase.from("solution_skills").select("id, category_id, name").eq("is_active", true).order("name");
@@ -119,6 +146,10 @@ export default function ExpertApplyPage() {
       alert("Please upload all three required documents.");
       return;
     }
+    if (!countryCode) {
+      alert("Please select your country.");
+      return;
+    }
     if (taxonomyLoadFailed) {
       alert("We couldn't load the service categories right now. Please refresh the page and try again — this isn't something on your end.");
       return;
@@ -155,6 +186,12 @@ export default function ExpertApplyPage() {
         uploadDoc(idFile!, "id"),
         uploadDoc(photoFile!, "photo"),
       ]);
+
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .update({ country_code: countryCode })
+        .eq("id", userId);
+      if (profileError) throw profileError;
 
       const { error: capError } = await supabase.rpc("fn_save_capability_profile", {
         p_expert_id: userId,
@@ -213,6 +250,21 @@ export default function ExpertApplyPage() {
                 We couldn't load service categories. Please refresh this page before continuing.
               </div>
             )}
+
+            <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.25rem" }}>
+              <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: "0.75rem" }}>Your country</div>
+              <select
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                required
+                style={{ width: "100%", padding: "0.55rem", border: "1px solid var(--border)", borderRadius: "6px", fontSize: "0.85rem" }}
+              >
+                <option value="">Select your country…</option>
+                {COUNTRIES.map((c) => (
+                  <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+                ))}
+              </select>
+            </div>
 
             <div style={{ background: "var(--white)", border: "1px solid var(--border)", borderRadius: "10px", padding: "1.5rem", marginBottom: "1.25rem" }}>
               <div style={{ fontWeight: 600, fontSize: "0.9rem", marginBottom: "0.75rem" }}>Which services can you provide?</div>

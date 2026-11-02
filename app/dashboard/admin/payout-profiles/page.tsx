@@ -10,6 +10,7 @@ type PendingProfile = {
   account_name: string;
   bank_name: string | null;
   account_number: string;
+  country: string | null;
   currency: string;
   method: string;
   created_at: string;
@@ -19,6 +20,31 @@ type PendingProfile = {
 function mask(num: string) {
   return num.length > 4 ? "****" + num.slice(-4) : num;
 }
+
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: "NG", name: "Nigeria" },
+  { code: "GH", name: "Ghana" },
+  { code: "KE", name: "Kenya" },
+  { code: "ZA", name: "South Africa" },
+  { code: "EG", name: "Egypt" },
+  { code: "MA", name: "Morocco" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "IE", name: "Ireland" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "NL", name: "Netherlands" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "PT", name: "Portugal" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "IN", name: "India" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "NZ", name: "New Zealand" },
+];
 
 export default function AdminPayoutProfilesPage() {
   const supabase = createClient();
@@ -34,7 +60,7 @@ export default function AdminPayoutProfilesPage() {
 
     const { data } = await supabase
       .from("payout_profiles")
-      .select("id, expert_id, account_name, bank_name, account_number, currency, method, created_at, profiles!payout_profiles_expert_id_fkey(full_name)")
+      .select("id, expert_id, account_name, bank_name, account_number, country, currency, method, created_at, profiles!payout_profiles_expert_id_fkey(full_name)")
       .eq("status", "pending_verification")
       .order("created_at", { ascending: true });
 
@@ -69,6 +95,11 @@ export default function AdminPayoutProfilesPage() {
     load();
   }
 
+  function countryName(code: string | null) {
+    if (!code) return "—";
+    return COUNTRIES.find((c) => c.code === code)?.name ?? code;
+  }
+
   return (
     <div style={{ minHeight: "100vh", background: "var(--cream)", padding: "2rem 5%" }}>
       <div style={{ maxWidth: "800px", margin: "0 auto" }}>
@@ -88,6 +119,7 @@ export default function AdminPayoutProfilesPage() {
                 <strong>{p.expert_name || "Unknown"}</strong>
                 <p style={{ fontSize: "0.85rem", marginTop: "0.3rem" }}>{p.account_name} — {p.bank_name || p.method}</p>
                 <p style={{ fontSize: "0.85rem", fontFamily: "monospace" }}>{mask(p.account_number)} · {p.currency}</p>
+                <p style={{ fontSize: "0.85rem" }}>{countryName(p.country)}</p>
                 <div style={{ display: "flex", gap: "0.6rem", marginTop: "0.75rem" }}>
                   <button onClick={() => decide(p.id, "verified")} disabled={actingId === p.id} style={{ background: "var(--gold)", color: "var(--ink)", border: "none", padding: "0.4rem 1rem", borderRadius: "6px", fontWeight: 600, fontSize: "0.8rem", cursor: "pointer" }}>
                     Verify

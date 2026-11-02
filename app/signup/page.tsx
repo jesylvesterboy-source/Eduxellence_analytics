@@ -5,6 +5,31 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: "NG", name: "Nigeria" },
+  { code: "GH", name: "Ghana" },
+  { code: "KE", name: "Kenya" },
+  { code: "ZA", name: "South Africa" },
+  { code: "EG", name: "Egypt" },
+  { code: "MA", name: "Morocco" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "IE", name: "Ireland" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "NL", name: "Netherlands" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "PT", name: "Portugal" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "IN", name: "India" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "NZ", name: "New Zealand" },
+];
+
 export default function SignupPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -15,6 +40,7 @@ export default function SignupPage() {
   const [role, setRole] = useState<"client" | "expert">("client");
   const [bio, setBio] = useState("");
   const [expertise, setExpertise] = useState("");
+  const [countryCode, setCountryCode] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -22,6 +48,12 @@ export default function SignupPage() {
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (role === "expert" && !countryCode) {
+      setError("Please select your country.");
+      return;
+    }
+
     setLoading(true);
 
     const { error: signUpError } = await supabase.auth.signUp({
@@ -31,7 +63,7 @@ export default function SignupPage() {
         data: {
           full_name: fullName,
           role: role,
-          ...(role === "expert" ? { bio, expertise } : {}),
+          ...(role === "expert" ? { bio, expertise, country_code: countryCode } : {}),
         },
       },
     });
@@ -124,6 +156,23 @@ export default function SignupPage() {
                   onChange={(e) => setExpertise(e.target.value)}
                   required
                 />
+                <select
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  required
+                  style={{
+                    padding: "0.75rem 1rem",
+                    border: "1px solid var(--border)",
+                    borderRadius: "6px",
+                    fontSize: "0.9rem",
+                    fontFamily: "DM Sans, sans-serif",
+                  }}
+                >
+                  <option value="">Select your country…</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+                  ))}
+                </select>
               </>
             )}
 

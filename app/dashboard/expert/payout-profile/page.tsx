@@ -22,6 +22,33 @@ function mask(num: string) {
   return num.length > 4 ? "****" + num.slice(-4) : num;
 }
 
+// ISO 3166-1 alpha-2 country list. Add or remove entries here if the
+// platform's payout corridor changes.
+const COUNTRIES: { code: string; name: string }[] = [
+  { code: "NG", name: "Nigeria" },
+  { code: "GH", name: "Ghana" },
+  { code: "KE", name: "Kenya" },
+  { code: "ZA", name: "South Africa" },
+  { code: "EG", name: "Egypt" },
+  { code: "MA", name: "Morocco" },
+  { code: "GB", name: "United Kingdom" },
+  { code: "US", name: "United States" },
+  { code: "CA", name: "Canada" },
+  { code: "IE", name: "Ireland" },
+  { code: "DE", name: "Germany" },
+  { code: "FR", name: "France" },
+  { code: "NL", name: "Netherlands" },
+  { code: "ES", name: "Spain" },
+  { code: "IT", name: "Italy" },
+  { code: "PT", name: "Portugal" },
+  { code: "AE", name: "United Arab Emirates" },
+  { code: "SA", name: "Saudi Arabia" },
+  { code: "IN", name: "India" },
+  { code: "CN", name: "China" },
+  { code: "AU", name: "Australia" },
+  { code: "NZ", name: "New Zealand" },
+];
+
 export default function PayoutProfilePage() {
   const supabase = createClient();
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -82,6 +109,10 @@ export default function PayoutProfilePage() {
       alert("Account name, account number, and currency are required.");
       return;
     }
+    if (!country) {
+      alert("Please select your country.");
+      return;
+    }
     setSubmitting(true);
 
     if (editingId) {
@@ -93,7 +124,7 @@ export default function PayoutProfilePage() {
           account_name: accountName,
           bank_name: bankName || null,
           account_number: accountNumber,
-          country: country || null,
+          country,
           currency,
         })
         .eq("id", editingId);
@@ -110,7 +141,7 @@ export default function PayoutProfilePage() {
         p_account_name: accountName,
         p_bank_name: bankName || null,
         p_account_number: accountNumber,
-        p_country: country || null,
+        p_country: country,
         p_currency: currency,
       });
       setSubmitting(false);
@@ -123,6 +154,11 @@ export default function PayoutProfilePage() {
     setShowForm(false);
     setEditingId(null);
     load();
+  }
+
+  function countryName(code: string | null) {
+    if (!code) return "—";
+    return COUNTRIES.find((c) => c.code === code)?.name ?? code;
   }
 
   return (
@@ -138,6 +174,7 @@ export default function PayoutProfilePage() {
             <div style={{ fontWeight: 600, color: "#1e8449", marginBottom: "0.5rem" }}>Verified Payout Account</div>
             <p style={{ fontSize: "0.85rem" }}>{activeProfile.account_name} - {activeProfile.bank_name || activeProfile.method}</p>
             <p style={{ fontSize: "0.85rem", fontFamily: "monospace" }}>{mask(activeProfile.account_number)} - {activeProfile.currency}</p>
+            <p style={{ fontSize: "0.85rem" }}>{countryName(activeProfile.country)}</p>
           </div>
         )}
 
@@ -145,6 +182,7 @@ export default function PayoutProfilePage() {
           <div style={{ background: "var(--gold-light)", border: "1px solid var(--gold)", borderRadius: "10px", padding: "1.25rem", marginBottom: "1.5rem" }}>
             <div style={{ fontWeight: 600 }}>Pending Verification</div>
             <p style={{ fontSize: "0.85rem", marginTop: "0.3rem" }}>{pendingProfile.account_name} - {mask(pendingProfile.account_number)}</p>
+            <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.3rem" }}>{countryName(pendingProfile.country)}</p>
             <p style={{ fontSize: "0.8rem", color: "var(--muted)", marginTop: "0.3rem" }}>Admin is reviewing this submission.</p>
             <button
               onClick={() => openEditForm(pendingProfile)}
@@ -175,7 +213,12 @@ export default function PayoutProfilePage() {
             <input placeholder="Full account name" value={accountName} onChange={(e) => setAccountName(e.target.value)} style={inputStyle} />
             <input placeholder="Bank name (if applicable)" value={bankName} onChange={(e) => setBankName(e.target.value)} style={inputStyle} />
             <input placeholder="Account number" value={accountNumber} onChange={(e) => setAccountNumber(e.target.value)} style={inputStyle} />
-            <input placeholder="Country" value={country} onChange={(e) => setCountry(e.target.value)} style={inputStyle} />
+            <select value={country} onChange={(e) => setCountry(e.target.value)} style={inputStyle}>
+              <option value="">Select country…</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.name} ({c.code})</option>
+              ))}
+            </select>
             <select value={currency} onChange={(e) => setCurrency(e.target.value)} style={inputStyle}>
               <option value="USD">USD</option>
               <option value="NGN">NGN</option>
